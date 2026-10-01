@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN" data-fontsize="1" data-motion="on" data-ui="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#16242b">
+  <meta name="description" content="晴天以后 · 留一盏灯（漫游版）—— 五章校园故事，六种后来。章节之间可以自由行动：逛校园地图、找人聊天、接下小小的委托。全部画面与音乐由代码即时生成。">
+  <title>晴天以后 · 留一盏灯 · 漫游版</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/scenes.css">
+  <link rel="stylesheet" href="css/ui.css">
+  <link rel="stylesheet" href="css/edition.css">
+  <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+<div class="app">
+  <main class="game" id="game" aria-label="晴天以后，校园视觉小说">
+
+    <!-- 顶栏 -->
+    <header class="hud">
+      <div class="chips">
+        <div class="chip chapter" id="chapterChip">第一章 · 九月</div>
+        <div class="chip place" id="placeChip">校门口</div>
+      </div>
+      <div class="toolbar" role="toolbar" aria-label="操作">
+        <button class="tb" id="backBtn" type="button" title="返回上一段（Backspace）">↶ 返回<span class="k">⌫</span></button>
+        <button class="tb" id="logBtn" type="button" title="故事记录（L）">☰ 记录<span class="k">L</span></button>
+        <button class="tb" id="pocketBtn" type="button" title="翻看故事中收起的纸片">▤ 口袋</button>
+        <button class="tb" id="mapBtn" type="button" title="校园地图（M）">◈ 地图<span class="k">M</span></button>
+        <button class="tb" id="questBtn" type="button" title="任务手账（J）">✦ 任务<span class="k">J</span></button>
+        <button class="tb" id="autoBtn" type="button" aria-pressed="false" title="自动播放（A）">▷ 自动<span class="k">A</span></button>
+        <button class="tb" id="skipBtn" type="button" aria-pressed="false" title="按住 Ctrl 可快进已读">» 快进<span class="k">Ctrl</span></button>
+        <button class="tb" id="musicBtn" type="button" aria-pressed="false" title="音乐、环境音与语气声（M）">♪ 声音</button>
+        <button class="tb" id="saveBtn" type="button" title="存档（S）">🖫 存档<span class="k">S</span></button>
+        <button class="tb" id="menuBtn" type="button" title="菜单（Esc）">≡ 菜单<span class="k">Esc</span></button>
+      </div>
+    </header>
+
+    <!-- 羁绊条 -->
+    <aside class="bonds hidden" id="bonds" aria-label="羁绊值"></aside>
+
+    <!-- 人物立绘 -->
+    <div class="characters" id="characters" aria-hidden="true"></div>
+
+    <!-- 自由行动层：场景人物标记、看一看、漫游 HUD、漫游对话 -->
+    <div class="roam-layer hidden" id="roamLayer">
+      <div class="npc-layer" id="npcLayer" aria-label="这里的人"></div>
+      <button class="look-spot hidden" id="lookSpot" type="button">✦ 看看这里</button>
+      <div class="roam-hud" id="roamHud">
+        <div class="roam-obj">
+          <b>当前目标</b>
+          <span id="roamObjText">—</span>
+          <em id="roamQuestCount">没有进行中的委托</em>
+        </div>
+        <div class="roam-actions">
+          <button class="roam-btn" id="roamMapBtn" type="button">◈ 地图</button>
+          <button class="roam-btn" id="roamJournalBtn" type="button">✦ 任务</button>
+          <button class="roam-btn primary" id="roamGoBtn" type="button">继续主线 →</button>
+        </div>
+      </div>
+      <div class="roam-dialog hidden" id="roamDialog" aria-live="polite"></div>
+    </div>
+
+    <!-- 选项 -->
+    <div class="choices hidden" id="choices" role="group" aria-label="故事选项"></div>
+
+    <!-- 对话框 -->
+    <section class="dialogue" id="dialogue" aria-live="polite" tabindex="0">
+      <div class="speaker" id="speaker"></div>
+      <div class="line scroll" id="line"></div>
+      <div class="dialogue-foot">
+        <span class="hint-text" id="hint">点击文字可继续</span>
+        <button class="nextLine" id="nextBtn" type="button">继续 <i>↘</i></button>
+      </div>
+    </section>
+
+    <!-- 进度条 -->
+    <div class="progress" id="progressBar" aria-hidden="true"></div>
+
+    <!-- 章节卡 -->
+    <div class="chapter-card" id="chapterCard" aria-hidden="true"></div>
+
+    <!-- 面板遮罩 -->
+    <div class="overlay hidden" id="overlay" role="dialog" aria-modal="true">
+      <div class="panel" id="panel"></div>
+    </div>
+
+    <!-- 提示 -->
+    <div class="toast-wrap" id="toasts" aria-live="polite"></div>
+    <div class="ach-pop" id="achPop" aria-live="polite"></div>
+  </main>
+</div>
+
+<!-- 依赖顺序：工具 → 美术 → 音频 → 舞台 → 数据 → 存储 → 界面 → 引擎 → 启动 -->
+<script src="js/util.js"></script>
+<script src="js/palette.js"></script>
+<script src="js/art.js"></script>
+<script src="js/character.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/stage.js"></script>
+<script src="js/story.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/game.js"></script>
+<script src="js/roam.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

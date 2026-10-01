@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>晴天以后 · 场景总览</title>
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/scenes.css">
+  <style>
+    html, body { height: auto; overflow: auto; background: #0e171c }
+    body { margin: 0; padding: 14px; font-family: "Microsoft YaHei", sans-serif }
+    .sheet { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px }
+    .cell { position: relative; }
+    .cell .frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+    }
+    .cell .stage { position: absolute; inset: 0 }
+    .cell .lbl {
+      margin-top: 5px;
+      font-size: 11px;
+      color: #8fb0ae;
+      letter-spacing: .08em;
+      display: flex;
+      justify-content: space-between;
+    }
+    .cell .lbl b { color: #cfe3dd; font-weight: 600 }
+  </style>
+</head>
+<body>
+<div class="sheet" id="sheet"></div>
+<script src="../js/util.js"></script>
+<script src="../js/palette.js"></script>
+<script src="../js/art.js"></script>
+<script src="../js/character.js"></script>
+<script>
+(function () {
+  const SP = window.SP;
+  const COMBOS = [
+    ['campus', 'afternoon', 'fair', '校门口'],
+    ['avenue', 'dusk', 'fair', '林荫道'],
+    ['club', 'dusk', 'fair', '社团大道'],
+    ['canteen', 'morning', 'fair', '食堂门口'],
+    ['plaza', 'afternoon', 'fair', '广场公告栏'],
+    ['classroom', 'morning', 'overcast', '专业课教室'],
+    ['lecture', 'afternoon', 'overcast', '阶梯教室'],
+    ['dorm', 'night', 'clear', '宿舍'],
+    ['library', 'night', 'overcast', '图书馆'],
+    ['lake', 'afternoon', 'fair', '校园湖边'],
+    ['lake', 'deep', 'drizzle', '湖边 · 雨后深夜'],
+    ['cafe', 'night', 'clear', '咖啡馆'],
+    ['roof', 'night', 'clear', '教学楼天台'],
+    ['track', 'dusk', 'clear', '黄昏操场'],
+    ['hall', 'night', 'clear', '社团放映室'],
+    ['campus', 'dawn', 'clear', '校门口 · 清晨'],
+  ];
+
+  const sheet = document.getElementById('sheet');
+  const clouds = ['c1', 'c2', 'c3', 'c4']
+    .map((c, i) => `<div class="cloud ${c}" style="--top:${10 + i * 8}%;--left:${5 + i * 24}%;--s:${0.7 + i * 0.22};--dur:${110 + i * 20}s">${SP.cloudShape(2 + i * 5)}</div>`)
+    .join('');
+
+  const stars = SP.art.stars(20260917, 170, 560);
+  COMBOS.forEach(([scene, time, weather, label]) => {
+    const parts = SP.art.build(scene);
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.innerHTML =
+      `<div class="frame"><div class="stage" data-scene="${scene}">
+         <div class="world">
+           <div class="clouds">${clouds}</div>
+           <div class="celestial"><div class="sun"></div><div class="moon"></div><div class="sun-halo"></div></div>
+           <div class="starlayer">${stars}</div>
+           <div class="shoot"><i></i><i></i></div>
+           <div class="layer l-far">${parts.far || ''}</div>
+           <div class="layer l-mid">${parts.mid || ''}</div>
+           <div class="layer l-near">${parts.near || ''}</div>
+           <div class="layer l-fore">${parts.fore || ''}</div>
+         </div>
+         <div class="light"><div class="rays"></div><div class="wet"></div><div class="vignette"></div><div class="grain"></div></div>
+       </div></div>
+       <div class="lbl"><b>${label}</b><span>${scene} · ${time} · ${weather}</span></div>`;
+    sheet.append(cell);
+    const stage = cell.querySelector('.stage');
+    SP.palette.applyTheme(stage, scene, time, weather);
+  });
+})();
+</script>
+</body>
+</html>

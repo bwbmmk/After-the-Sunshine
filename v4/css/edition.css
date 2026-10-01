@@ -1,0 +1,50 @@
+/* 留一盏灯 — paper, ink, a little warm light. */
+:root{--ui-accent:#547a70;--ui-accent-2:#8fa99b;--ui-ink:#344842;--ui-ink-2:#58645c;--ui-ink-3:#758379;--ui-panel:#f8f4e8;--ui-glass-strong:rgba(250,247,237,.96)}
+.app{background:#dce1d8;background-image:radial-gradient(ellipse at 15% 0,#f2eee0,transparent 65%)}
+.game{border-radius:14px;box-shadow:0 24px 85px #334d4333}
+.hud{padding:20px 24px}.toolbar{max-width:72%;gap:5px}.tb{border-radius:8px;padding:9px 11px;box-shadow:0 2px 7px #32453a12}.tb .k{display:none}
+.chip{border-radius:7px;box-shadow:none;font-size:12px}.chip.place{background:transparent;border-color:transparent;color:#fdfaf0;text-shadow:0 1px 5px #203c3d}
+.dialogue{left:4.5%;right:4.5%;bottom:3%;min-height:25%;padding:23px 30px 16px;border-radius:11px;border:1px solid #fffaf0;box-shadow:0 16px 45px #2e443e2a}
+.dialogue::after{background:#b2bbab;height:1px;opacity:.35}.speaker{font-size:13px;letter-spacing:.22em}.line{font-size:clamp(18px,1.62vw,23px);line-height:1.95;max-width:100%;letter-spacing:.035em}
+
+/* ── 对白 / 旁白 / 心声，三种字 ───────────────────────────────────
+ * 旁白退成一层空气：小一号、颜色浅、行距松，像纸背透过来的字。
+ * 对白是唯一完整着墨的东西：实色、字重稍重，读的时候像有人在说话。
+ * 心声用暖褐竖线领起，和「说出口」区分开 —— 它没被任何人听见。
+ * ------------------------------------------------------------------ */
+/* ── 对白 / 旁白 / 心声，三种写法 ─────────────────────────────────
+ * 文本是在一行里流动的，插不得竖线也缩不了进，所以区分只能靠「字本身」：
+ *   明度 —— 旁白往纸色里退一档（对比度仍守住 4:1 上下，长段叙述不费眼）
+ *           对白留在最实的墨色，心声居中而偏暖
+ *   字重 —— 只有说出口的话加分量
+ *   字体 —— 心声换衬线，读起来像另一种质地的声音
+ *   色相 —— 六个人各偏一点点，读久了能靠颜色认出是谁在开口
+ * 全部用 color-mix 混当前主题变量，夜读模式自动跟着翻。
+ * ------------------------------------------------------------------ */
+.seg-n{color:color-mix(in srgb, var(--ui-ink) 72%, var(--ui-panel));font-size:.96em;letter-spacing:.045em}
+.seg-d{color:var(--ui-ink);font-weight:600;letter-spacing:.03em}
+.seg-i{color:color-mix(in srgb, var(--ui-ink) 42%, #b06a3e);font-family:var(--font-serif);font-size:.99em;letter-spacing:.025em}
+/* 每个人说的话挪一点点色相 —— 不喧宾夺主，但读久了能靠颜色认出是谁在开口 */
+.seg-d[data-who="小满"]{color:color-mix(in srgb, var(--ui-ink) 72%, #c07a52)}
+.seg-d[data-who="程野"]{color:color-mix(in srgb, var(--ui-ink) 72%, #5b7f92)}
+.seg-d[data-who="阿言"]{color:color-mix(in srgb, var(--ui-ink) 72%, #7089b8)}
+.seg-d[data-who="陈姨"]{color:color-mix(in srgb, var(--ui-ink) 72%, #bb8f34)}
+.seg-d[data-who="妈妈"]{color:color-mix(in srgb, var(--ui-ink) 72%, #b96f7d)}
+.seg-d[data-who="周老师"]{color:color-mix(in srgb, var(--ui-ink) 72%, #8375a6)}
+.inner-tag{color:color-mix(in srgb, var(--ui-ink) 50%, #b06a3e);font-size:11px;letter-spacing:.2em;font-weight:400;font-family:var(--font-serif)}
+.log-entry.narr .txt{color:var(--ui-ink-3);font-size:14px;line-height:1.9}
+.log-entry.narr .meta b{color:var(--ui-ink-3);font-weight:500}
+.dialogue-foot{padding-top:15px}.hint-text{font-size:11px;opacity:.72}.nextLine{border-radius:7px}
+.choices{top:23%;width:min(530px,54%);max-height:43%;gap:12px}.choice{border-radius:9px;padding-top:18px;padding-bottom:18px;border-left:3px solid #a1b1a0;box-shadow:0 8px 20px #2b453222;font-size:15px;line-height:1.65}.choice small{font-size:12px;line-height:1.7;opacity:.8}.choice::before{border:0;border-radius:0;font-size:12px;color:var(--ui-accent)}
+.char{width:min(39vh,365px);height:min(61vh,570px);bottom:21%;filter:drop-shadow(0 16px 20px #253a3a3a)}.char[data-side="right"]{right:8%}
+.portrait-body{animation:portrait-breathe 5s ease-in-out infinite alternate;transform-origin:50% 100%}.portrait-head{animation:portrait-turn 9s ease-in-out infinite alternate;transform-origin:50% 42%}.portrait-eyes{animation:portrait-blink 7s infinite;transform-origin:50% 156px}
+@keyframes portrait-breathe{to{transform:translateY(-2px)}}@keyframes portrait-turn{to{transform:rotate(.6deg)}}@keyframes portrait-blink{0%,43%,47%,100%{transform:scaleY(1)}45%{transform:scaleY(.1)}}
+.panel{border-radius:12px;box-shadow:0 24px 70px #243c3a40}.panel.cover{width:min(700px,94%);position:relative;padding:45px 50px 36px;border:8px solid #efecdf;outline:1px solid #ffffff9c;outline-offset:-15px}.cover h1{font-size:clamp(46px,6vw,78px);letter-spacing:.16em;padding:14px 0 12px;position:relative}.cover h1:after{content:"";position:absolute;width:58px;height:3px;background:#b47a5a;bottom:0;left:calc(50% - 29px);transform:rotate(-3deg)}.cover .eyebrow{font-size:11px;letter-spacing:.24em}.cover .lead{white-space:pre-line;font-size:15px;line-height:2.2;margin:20px auto;max-width:none}.cover .stat-row{display:none}.cover .fine{white-space:pre-line;margin-top:22px;font-size:11px}.cover .btn.primary{padding:13px 36px}
+.btn{border-radius:7px}.overlay{backdrop-filter:blur(8px) saturate(.88)}.panel p{white-space:pre-line}.ending-last{border-top:1px solid #c5cbbc;padding-top:20px;margin-top:20px!important;font-family:var(--font-serif);font-size:19px}.ending-stats{opacity:.65;font-size:11px}
+.notebook-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;padding:14px 4px}.notebook-page{position:relative;padding:28px 24px;background:#fffdf3;border:1px solid #dcd8c5;box-shadow:2px 5px 0 #e4e0ce;transform:rotate(-.45deg)}.notebook-page:nth-child(2n){transform:rotate(.6deg)}.notebook-page:before{content:"";position:absolute;left:42%;top:-8px;width:50px;height:17px;background:#bac8b68c;transform:rotate(-4deg)}.notebook-page h2{font-family:var(--font-serif);font-size:22px}.notebook-page p{font-size:14px;line-height:2.1;background:repeating-linear-gradient(transparent 0 28px,#b8c1ad40 28px 29px)}.notebook-page .eyebrow{font-size:10px}
+.chapter-card .cc-name{font-size:clamp(25px,3vw,43px);letter-spacing:.2em}.chapter-card .cc-sub{font-size:22px;color:#8b6d51}.progress{opacity:.65}
+[data-ui="night"]{--ui-accent:#9fbdad;--ui-ink:#e8ecdf;--ui-ink-2:#ccd3c7;--ui-ink-3:#a2b1a6;--ui-panel:#283b37;--ui-glass-strong:rgba(33,49,45,.97)}
+[data-ui="night"] .notebook-page{background:#31443b;border-color:#536052;box-shadow:2px 5px #203229}[data-ui="night"] .panel.cover{border-color:#35483e}
+@media(max-width:900px){.hud{display:block;padding:12px}.chips{margin-bottom:8px}.toolbar{justify-content:flex-start;max-width:100%;gap:4px}.tb{padding:7px 8px;font-size:11px}.dialogue{min-height:28%;max-height:43%;padding:17px 19px 10px;bottom:2%;left:3%;right:3%}.line{font-size:17px;line-height:1.85}.char{width:min(38vh,290px);height:min(59vh,450px);bottom:25%}.char[data-side="right"]{right:0}.choices{top:22%;max-height:42%;width:auto;left:4%;right:4%}.choice{font-size:14px;padding-top:12px;padding-bottom:12px}.panel.cover{padding:30px 20px 24px}.cover .lead{font-size:13px}.notebook-grid{grid-template-columns:1fr}.chip.place{color:var(--ui-ink-2);text-shadow:none;background:var(--ui-glass)}.game{border-radius:0}}
+@media(max-height:560px){.hud{padding:8px}.dialogue{min-height:28%;max-height:42%}.choices{top:23%;max-height:34%}.char{bottom:25%;height:64vh;width:41vh}.line{font-size:15px;line-height:1.7}.panel.cover{padding:20px 24px}.cover h1{font-size:36px}.cover .lead{margin:8px auto}.cover .fine{margin-top:8px}}
+[data-motion="off"] .portrait-body,[data-motion="off"] .portrait-head,[data-motion="off"] .portrait-eyes{animation:none}@media(prefers-reduced-motion:reduce){.portrait-body,.portrait-head,.portrait-eyes{animation:none}}

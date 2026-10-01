@@ -1,0 +1,12 @@
+# 文本文件统一以 LF 存进仓库，避免 Windows 上 CRLF 造成的整文件 diff 噪音
+* text=auto eol=lf
+
+# 二进制：不要碰
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.ico  binary
+*.apk  binary
+*.jar  binary
+*.exe  binary
+*.zip  binary

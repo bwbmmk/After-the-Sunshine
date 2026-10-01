@@ -1,0 +1,368 @@
+/*!
+ * 晴天以后 · v2  |  scenes.css
+ * 舞台、天空、天气、光照、场景转场、画面内动效、人物立绘。
+ */
+
+/* --------------------------------- 画框 --------------------------------- */
+.app {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background:
+    radial-gradient(1200px 700px at 20% -10%, #24404a, transparent 60%),
+    radial-gradient(900px 600px at 100% 100%, #1d2f38, transparent 60%),
+    #121d23;
+}
+
+.game {
+  position: relative;
+  width: min(1360px, 100%);
+  height: min(860px, calc(100dvh - 32px));
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  isolation: isolate;
+  background: #0e171c;
+  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* --------------------------------- 舞台 --------------------------------- */
+.stage {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-stage);
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--sky-1) 0%, var(--sky-mid) 38%, var(--sky-2) 66%, var(--sky-3) 100%);
+  transition:
+    --sky-1 1.4s var(--ease), --sky-2 1.4s var(--ease), --sky-3 1.4s var(--ease),
+    --sky-mid 1.4s var(--ease), --amb-c 1.4s var(--ease), --sun-c 1.4s var(--ease),
+    --c-far 1.4s var(--ease), --c-mid 1.4s var(--ease), --c-near 1.4s var(--ease),
+    --c-ground 1.4s var(--ease), --c-ground2 1.4s var(--ease), --c-path 1.4s var(--ease),
+    --c-wall 1.4s var(--ease), --c-wall2 1.4s var(--ease), --c-roof 1.4s var(--ease),
+    --c-trim 1.4s var(--ease), --c-trunk 1.4s var(--ease), --c-leaf 1.4s var(--ease),
+    --c-leaf2 1.4s var(--ease), --c-water 1.4s var(--ease), --c-water2 1.4s var(--ease),
+    --c-glass 1.4s var(--ease), --c-warm 1.4s var(--ease), --c-lamp 1.4s var(--ease),
+    --c-wood 1.4s var(--ease), --c-metal 1.4s var(--ease), --c-accent 1.4s var(--ease),
+    --c-ink 1.4s var(--ease), --c-bloom 1.4s var(--ease), --c-floor 1.4s var(--ease),
+    --amb-o 1.2s linear, --sun-a 1.2s linear, --star-a 1.6s linear, --glow-a 1.2s linear,
+    --fog-a 1.4s linear, --wet-a 1.4s linear, --cloud-a 1.4s linear, --lamp-a 1.6s linear,
+    --veil-a 1.4s linear, --night 1.4s linear, --sun-op 1s linear, --moon-a 1.2s linear;
+}
+
+.world { position: absolute; inset: 0 }
+.world.ghost {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.85s var(--ease);
+}
+.world.ghost[data-t="slowfade"] { transition: opacity 1.6s var(--ease) }
+.world.ghost.gone { opacity: 0 }
+
+.layer {
+  position: absolute;
+  inset: -4%;
+  will-change: transform;
+}
+.layer svg { width: 100%; height: 100%; display: block }
+
+/* 新场景进场：不同转场用不同位移 */
+.layer.enter-fade svg { opacity: 0; transition: opacity 0.6s var(--ease) }
+.layer.enter-slide { transform: translate3d(4%, 0, 0) scale(1.05); transition: transform 0.9s var(--ease-out) }
+.layer.enter-zoom svg { transform: scale(1.12); transform-origin: 50% 62%; transition: transform 1.1s var(--ease-out) }
+.layer.enter-wipe svg { clip-path: inset(0 100% 0 0); transition: clip-path 0.85s var(--ease-out) }
+
+/* -------------------------------- 天体 / 云 ------------------------------- */
+.celestial { position: absolute; inset: 0; will-change: transform }
+
+.sun, .moon {
+  position: absolute;
+  left: var(--sun-x, 70%);
+  top: var(--sun-y, 20%);
+  width: var(--sun-r, 80px);
+  height: var(--sun-r, 80px);
+  margin: calc(var(--sun-r, 80px) / -2) 0 0 calc(var(--sun-r, 80px) / -2);
+  border-radius: 50%;
+  background: var(--sun-c);
+  opacity: var(--sun-a);
+}
+.sun { box-shadow: 0 0 60px 20px color-mix(in srgb, var(--sun-c) 55%, transparent) }
+.sun { opacity: calc(var(--sun-a) * var(--sun-op)) }
+.moon { opacity: calc(var(--sun-a) * var(--moon-a) * 0.92) }
+.moon::after {
+  content: "";
+  position: absolute;
+  inset: 12%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 32%, rgba(0, 0, 0, 0.1) 0 18%, transparent 19%),
+              radial-gradient(circle at 62% 58%, rgba(0, 0, 0, 0.08) 0 13%, transparent 14%),
+              radial-gradient(circle at 44% 70%, rgba(0, 0, 0, 0.07) 0 9%, transparent 10%);
+}
+.sun-halo {
+  position: absolute;
+  inset: 0;
+  opacity: var(--glow-a);
+  background: radial-gradient(
+    46vmax 34vmax at var(--sun-x, 70%) var(--sun-y, 20%),
+    color-mix(in srgb, var(--c-warm) 55%, transparent) 0%,
+    color-mix(in srgb, var(--c-warm) 18%, transparent) 42%,
+    transparent 72%
+  );
+  mix-blend-mode: screen;
+}
+
+.clouds { position: absolute; inset: 0; will-change: transform }
+
+/* 星空 */
+.starlayer { position: absolute; inset: 0 }
+.starlayer svg { width: 100%; height: 100%; display: block }
+
+/* 流星 */
+.shoot { position: absolute; inset: 0; opacity: var(--star-a) }
+.shoot i {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.7);
+}
+.shoot i::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 130px;
+  height: 1.5px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.85));
+  transform: translate(0, -50%);
+  border-radius: 99px;
+}
+.shoot i:nth-child(1) { top: 14%; left: 8%; animation: shoot 16s linear infinite 3s }
+.shoot i:nth-child(2) { top: 6%; left: 42%; animation: shoot 23s linear infinite 11s }
+@keyframes shoot {
+  0% { transform: translate(0, 0) rotate(16deg); opacity: 0 }
+  2% { opacity: 1 }
+  12% { transform: translate(46vw, 13vw) rotate(16deg); opacity: 0 }
+  100% { transform: translate(46vw, 13vw) rotate(16deg); opacity: 0 }
+}
+.cloud {
+  position: absolute;
+  top: var(--top);
+  left: var(--left);
+  opacity: var(--cloud-a);
+  animation: cloud-drift var(--dur, 120s) linear infinite alternate;
+  filter: blur(1px);
+}
+.cloud svg { width: calc(420px * var(--s, 1)); height: auto; overflow: visible }
+.cloud.c2 { animation-duration: calc(var(--dur) * 0.8) }
+.cloud.c4 { animation-direction: alternate-reverse }
+@keyframes cloud-drift {
+  from { transform: translate3d(0, 0, 0) }
+  to { transform: translate3d(6vw, -1.4vh, 0) }
+}
+
+/* --------------------------------- 光照 --------------------------------- */
+.light { position: absolute; inset: 0; pointer-events: none; z-index: 5 }
+.light > div { position: absolute; inset: 0 }
+
+.rays {
+  opacity: calc(var(--glow-a) * 0.16);
+  background: repeating-linear-gradient(
+    100deg,
+    transparent 0 90px,
+    color-mix(in srgb, var(--c-warm) 55%, transparent) 90px 168px,
+    transparent 168px 400px
+  );
+  filter: blur(26px);
+  mix-blend-mode: screen;
+  transform: translateX(-6%) rotate(-2deg) scale(1.2);
+  animation: rays-drift 34s ease-in-out infinite alternate;
+}
+@keyframes rays-drift { to { transform: translateX(3%) rotate(-2deg) scale(1.2) } }
+
+.wet {
+  opacity: var(--wet-a);
+  background:
+    linear-gradient(180deg, transparent 58%, color-mix(in srgb, var(--c-water2) 40%, transparent) 100%),
+    repeating-linear-gradient(96deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 26px);
+  mix-blend-mode: soft-light;
+}
+
+.vignette {
+  background:
+    radial-gradient(140% 100% at 50% 42%, transparent 46%, rgba(20, 40, 46, 0.28) 100%),
+    linear-gradient(180deg, rgba(16, 34, 42, 0.18) 0%, transparent 26%);
+  opacity: calc(0.7 + var(--night) * 0.3);
+}
+
+.grain {
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='0.5'/></svg>");
+  background-size: 160px 160px;
+}
+
+.wash {
+  opacity: 0;
+  background: var(--ui-panel);
+  transition: opacity 0.34s var(--ease);
+}
+.wash.active { opacity: 1 }
+
+.fx {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* 夜间整体压色 */
+.stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--amb-c);
+  opacity: calc(var(--amb-o) * 0.55 + var(--veil-a));
+  mix-blend-mode: soft-light;
+  z-index: 3;
+}
+
+/* ---------------------------- 画面内的自然动效 ---------------------------- */
+.stars-g { animation: twinkle 4.6s ease-in-out infinite alternate }
+@keyframes twinkle { to { opacity: calc(var(--star-a) * 0.72) } }
+
+.win-lit { animation: lamp-flicker 7s steps(1, end) infinite }
+@keyframes lamp-flicker {
+  0%, 92% { opacity: var(--lamp-a) }
+  94% { opacity: calc(var(--lamp-a) * 0.6) }
+  96%, 100% { opacity: var(--lamp-a) }
+}
+.lamp-halo { animation: halo-breathe 6.4s ease-in-out infinite alternate }
+@keyframes halo-breathe { to { transform: scale(1.09); transform-origin: center } }
+
+.steam-puff { animation: steam-up 5.6s ease-out infinite }
+@keyframes steam-up {
+  0% { transform: translateY(0) scale(0.8); opacity: 0 }
+  20% { opacity: 0.5 }
+  100% { transform: translateY(-190px) scale(1.7); opacity: 0 }
+}
+.steam { animation: steam-sway 9s ease-in-out infinite alternate }
+@keyframes steam-sway { to { transform: translateX(26px) } }
+
+.cup-steam ellipse { animation: steam-up 5s ease-out infinite }
+
+.dapple { animation: dapple-sway 12s ease-in-out infinite alternate; transform-origin: 50% 0 }
+@keyframes dapple-sway { to { transform: translateX(-40px) rotate(1.6deg) } }
+
+.avenue-canopy { animation: canopy-sway 14s ease-in-out infinite alternate; transform-origin: 50% -10% }
+@keyframes canopy-sway { to { transform: translateX(16px) rotate(0.7deg) } }
+
+.willow path { animation: willow-sway 8s ease-in-out infinite alternate; transform-origin: 50% 0 }
+@keyframes willow-sway { to { transform: translateX(14px) rotate(1.2deg) } }
+
+.lake-lines rect { animation: lake-flow 7s ease-in-out infinite alternate }
+.lake-lines rect:nth-child(2n) { animation-duration: 9.5s; animation-direction: alternate-reverse }
+@keyframes lake-flow { to { transform: translateX(-64px) scaleX(1.06) } }
+
+.reflect { animation: reflect-breathe 8s ease-in-out infinite alternate }
+@keyframes reflect-breathe { to { opacity: 0.18; transform: translateY(4px) scaleY(0.97) } }
+
+.duck { animation: duck-drift 22s ease-in-out infinite alternate }
+@keyframes duck-drift { to { transform: translate(-120px, 10px) } }
+
+.fountain ellipse { animation: fountain-rise 3.4s ease-out infinite }
+.fountain ellipse:nth-child(3n) { animation-duration: 4.2s }
+@keyframes fountain-rise {
+  0% { transform: translateY(0); opacity: 0 }
+  16% { opacity: 0.55 }
+  100% { transform: translateY(-86px); opacity: 0 }
+}
+
+.pendant { animation: pendant-sway 11s ease-in-out infinite alternate; transform-origin: 50% 0 }
+@keyframes pendant-sway { to { transform: translateX(8px) rotate(0.5deg) } }
+
+.skyline { opacity: 0.96 }
+.projector-beam { animation: beam-flicker 6s ease-in-out infinite alternate }
+@keyframes beam-flicker { to { opacity: 0.32 } }
+
+.night-city { transition: opacity 1s linear }
+
+.obj-booth { animation: booth-breathe 9s ease-in-out infinite alternate; transform-origin: bottom }
+@keyframes booth-breathe { to { transform: translateY(-2px) } }
+
+.goal, .fence, .railing { opacity: inherit }
+
+/* -------------------------------- 人物立绘 ------------------------------- */
+.characters {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-chars);
+  pointer-events: none;
+}
+
+.char {
+  position: absolute;
+  bottom: 20%;
+  left: 50%;
+  width: min(30vh, 300px);
+  height: min(46vh, 460px);
+  margin-left: 6%;
+  transform-origin: 50% 100%;
+  filter: drop-shadow(0 20px 26px rgba(18, 40, 44, 0.35));
+  transition: opacity 0.5s var(--ease), transform 0.7s var(--ease-out);
+}
+.char[data-side="right"] { left: auto; right: 8%; margin-left: 0 }
+.char[data-side="left"] { left: 8%; margin-left: 0 }
+.char[data-side="center"] { left: 50%; margin-left: -15% }
+
+.ch-svg { width: 100%; height: 100%; display: block; overflow: visible }
+.ch-body { animation: ch-breathe 4.6s ease-in-out infinite alternate; transform-origin: 50% 100% }
+@keyframes ch-breathe {
+  from { transform: translateY(0) scaleY(1) }
+  to { transform: translateY(-4px) scaleY(1.008) }
+}
+.ch-head { animation: ch-head-sway 7s ease-in-out infinite alternate; transform-origin: 50% 78% }
+@keyframes ch-head-sway { to { transform: rotate(1.4deg) translateY(-2px) } }
+
+/* 进出场 */
+.char.enter { opacity: 0; transform: translateY(30px) scale(0.96) }
+.char.out { opacity: 0; transform: translateY(18px) scale(1.02) }
+
+/* 角色配色：统一的深色剪影，用很小的色相差区分，五官只用极淡亮线暗示 */
+.char[data-char="man"] {
+  --ch-hair: #1d2b34; --ch-skin: #41606a; --ch-skin2: #35505a;
+  --ch-coat: #2b4a52; --ch-coll: #d98f7a; --ch-lower: #36525d; --ch-lower2: #2c434c;
+  --ch-shoe: #1a252c; --ch-line: #cfe3de; --ch-acc: #24383f; --ch-acc2: #c98a6a;
+}
+.char[data-char="yan"] {
+  --ch-hair: #19232b; --ch-skin: #3a545e; --ch-skin2: #304952;
+  --ch-coat: #21383f; --ch-coll: #e6e1cd; --ch-lower: #293c45; --ch-lower2: #21303a;
+  --ch-shoe: #161f26; --ch-line: #cbdcd8; --ch-acc: #b3704f; --ch-acc2: #e8dcc4;
+}
+.char[data-char="me"] {
+  --ch-hair: #212e37; --ch-skin: #405c65; --ch-skin2: #36505a;
+  --ch-coat: #2e4c53; --ch-coll: #f0ead6; --ch-lower: #303e48; --ch-lower2: #28343c;
+  --ch-shoe: #1b242b; --ch-line: #d3e4df; --ch-acc: #b5765a; --ch-acc2: #2c3f48;
+}
+.char[data-char="mom"] {
+  --ch-hair: #1f2229; --ch-skin: #44595f; --ch-skin2: #394c54;
+  --ch-coat: #4a3b44; --ch-coll: #ecdfd0; --ch-lower: #323b44; --ch-lower2: #2a323a;
+  --ch-shoe: #1c2327; --ch-line: #dce8e2; --ch-acc: #263238; --ch-acc2: #cdd8d2;
+}
+.char[data-char="teacher"], .char[data-char="unknown"] {
+  --ch-hair: #2b3037; --ch-skin: #4a636d; --ch-skin2: #3e565f;
+  --ch-coat: #3f4a52; --ch-coll: #e8e2d2; --ch-lower: #3c444d; --ch-lower2: #333b43;
+  --ch-shoe: #242c33; --ch-line: #dde6e1; --ch-acc: #5a6b72; --ch-acc2: #dfe4dc;
+}
+
+/* --------------------------------- 响应式 ------------------------------- */
+@media (max-width: 900px) {
+  .app { padding: 0 }
+  .game { width: 100%; height: 100dvh; border-radius: 0 }
+  .char { width: min(26vh, 220px); height: min(40vh, 340px); bottom: 24% }
+}

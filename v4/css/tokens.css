@@ -1,0 +1,208 @@
+/*!
+ * 晴天以后 · v2  |  tokens.css
+ * 设计令牌 + 会被 @property 注册的颜色变量（用于时段平滑换色）。
+ */
+
+/* ---------------------------- 可动画的颜色变量 ---------------------------- */
+@property --c-far      { syntax: '<color>'; inherits: true; initial-value: #a8c3c9 }
+@property --c-mid      { syntax: '<color>'; inherits: true; initial-value: #8fae9c }
+@property --c-near     { syntax: '<color>'; inherits: true; initial-value: #6f9480 }
+@property --c-ground   { syntax: '<color>'; inherits: true; initial-value: #86aa97 }
+@property --c-ground2  { syntax: '<color>'; inherits: true; initial-value: #74988c }
+@property --c-path     { syntax: '<color>'; inherits: true; initial-value: #e8dcc3 }
+@property --c-wall     { syntax: '<color>'; inherits: true; initial-value: #f9f3df }
+@property --c-wall2    { syntax: '<color>'; inherits: true; initial-value: #e7e0c9 }
+@property --c-roof     { syntax: '<color>'; inherits: true; initial-value: #b77e71 }
+@property --c-trim     { syntax: '<color>'; inherits: true; initial-value: #cfc6ad }
+@property --c-trunk    { syntax: '<color>'; inherits: true; initial-value: #6e806c }
+@property --c-leaf     { syntax: '<color>'; inherits: true; initial-value: #6f9a80 }
+@property --c-leaf2    { syntax: '<color>'; inherits: true; initial-value: #94bda2 }
+@property --c-water    { syntax: '<color>'; inherits: true; initial-value: #80b3b0 }
+@property --c-water2   { syntax: '<color>'; inherits: true; initial-value: #689c9d }
+@property --c-glass    { syntax: '<color>'; inherits: true; initial-value: #a9ced0 }
+@property --c-warm     { syntax: '<color>'; inherits: true; initial-value: #fff2cb }
+@property --c-lamp     { syntax: '<color>'; inherits: true; initial-value: #ffd98a }
+@property --c-wood     { syntax: '<color>'; inherits: true; initial-value: #baad96 }
+@property --c-metal    { syntax: '<color>'; inherits: true; initial-value: #8b9b8c }
+@property --c-accent   { syntax: '<color>'; inherits: true; initial-value: #d98f7a }
+@property --c-ink      { syntax: '<color>'; inherits: true; initial-value: #3c5a5a }
+@property --c-bloom    { syntax: '<color>'; inherits: true; initial-value: #f0a0b4 }
+@property --c-floor    { syntax: '<color>'; inherits: true; initial-value: #cbb894 }
+@property --sky-1      { syntax: '<color>'; inherits: true; initial-value: #8fc9dd }
+@property --sky-2      { syntax: '<color>'; inherits: true; initial-value: #cde5dd }
+@property --sky-3      { syntax: '<color>'; inherits: true; initial-value: #eff1dd }
+@property --sky-mid    { syntax: '<color>'; inherits: true; initial-value: #aed7d9 }
+@property --amb-c      { syntax: '<color>'; inherits: true; initial-value: #fffaeb }
+@property --sun-c      { syntax: '<color>'; inherits: true; initial-value: #fffdf0 }
+
+@property --amb-o   { syntax: '<number>'; inherits: true; initial-value: 0.15 }
+@property --sun-a   { syntax: '<number>'; inherits: true; initial-value: 0.9 }
+@property --star-a  { syntax: '<number>'; inherits: true; initial-value: 0 }
+@property --glow-a  { syntax: '<number>'; inherits: true; initial-value: 0.8 }
+@property --fog-a   { syntax: '<number>'; inherits: true; initial-value: 0.1 }
+@property --wet-a   { syntax: '<number>'; inherits: true; initial-value: 0 }
+@property --cloud-a { syntax: '<number>'; inherits: true; initial-value: 0.5 }
+@property --lamp-a  { syntax: '<number>'; inherits: true; initial-value: 0.3 }
+@property --veil-a  { syntax: '<number>'; inherits: true; initial-value: 0 }
+@property --night   { syntax: '<number>'; inherits: true; initial-value: 0 }
+@property --sun-op  { syntax: '<number>'; inherits: true; initial-value: 1 }
+@property --moon-a  { syntax: '<number>'; inherits: true; initial-value: 0 }
+
+/* --------------------------------- 令牌 --------------------------------- */
+:root {
+  /* 字体 */
+  --font-ui: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", system-ui, -apple-system, sans-serif;
+  --font-serif: "Songti SC", "STSong", "SimSun", "Noto Serif SC", Georgia, serif;
+  --font-num: ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+  /* 字号（正文由 data-fontsize 覆盖） */
+  --fs-line: clamp(17px, 1.62vw, 22px);
+  --fs-sm: 12px;
+  --fs-md: 13.5px;
+  --fs-lg: 15px;
+  --fs-xl: clamp(26px, 3.4vw, 40px);
+  --fs-cover: clamp(42px, 7vw, 82px);
+
+  /* 圆角 */
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 26px;
+  --r-pill: 999px;
+
+  /* 间距 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 22px;
+  --sp-6: 30px;
+
+  /* 界面基色（浅） */
+  --ui-panel: #fffdf5;
+  --ui-panel-2: #f6f4ea;
+  --ui-ink: #27454c;
+  --ui-ink-2: #5a7674;
+  --ui-ink-3: #8ba39d;
+  --ui-line: #dfe7dd;
+  --ui-accent: #4f9187;
+  --ui-accent-2: #6fb3a4;
+  --ui-warn: #c9714f;
+  --ui-glass: rgba(255, 253, 245, 0.82);
+  --ui-glass-strong: rgba(255, 253, 245, 0.94);
+
+  /* 阴影 */
+  --sh-1: 0 2px 10px rgba(45, 78, 76, 0.10);
+  --sh-2: 0 10px 30px rgba(45, 78, 76, 0.16);
+  --sh-3: 0 26px 70px rgba(35, 62, 62, 0.26);
+  --sh-glow: 0 0 0 3px rgba(111, 179, 164, 0.35);
+
+  /* 动效 */
+  --t-fast: 0.16s;
+  --t-mid: 0.28s;
+  --t-slow: 0.6s;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* 层级 */
+  --z-stage: 1;
+  --z-chars: 3;
+  --z-hud: 6;
+  --z-choices: 7;
+  --z-dialogue: 8;
+  --z-overlay: 20;
+  --z-toast: 40;
+
+  color-scheme: light;
+}
+
+/* 夜读界面：把界面压暗，画面不受影响 */
+[data-ui="night"] {
+  --ui-panel: #1d2a33;
+  --ui-panel-2: #24333d;
+  --ui-ink: #e8f0ec;
+  --ui-ink-2: #a9c2bc;
+  --ui-ink-3: #7d9490;
+  --ui-line: #35464f;
+  --ui-glass: rgba(24, 35, 43, 0.82);
+  --ui-glass-strong: rgba(24, 35, 43, 0.95);
+  --ui-accent: #7fc0b2;
+  --ui-accent-2: #9ed6c8;
+  color-scheme: dark;
+}
+
+/* 正文字号档位 */
+[data-fontsize="0"] { --fs-line: clamp(15px, 1.42vw, 19px) }
+[data-fontsize="2"] { --fs-line: clamp(19px, 1.86vw, 25px) }
+[data-fontsize="3"] { --fs-line: clamp(21px, 2.1vw, 28px) }
+
+/* 减少动画 */
+[data-motion="off"] *,
+[data-motion="off"] *::before,
+[data-motion="off"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ------------------------------- 基础重置 ------------------------------- */
+*, *::before, *::after { box-sizing: border-box }
+
+html, body { height: 100% }
+
+body {
+  margin: 0;
+  font-family: var(--font-ui);
+  color: #2b444a;
+  background: #17242a;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button, input, select { font: inherit; color: inherit }
+
+button {
+  cursor: pointer;
+  border: 0;
+  background: none;
+}
+
+button:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid #f4bc83;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.hidden { display: none !important }
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+::selection { background: rgba(111, 179, 164, 0.32) }
+
+/* 细滚动条 */
+.scroll::-webkit-scrollbar { width: 9px; height: 9px }
+.scroll::-webkit-scrollbar-track { background: transparent }
+.scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--ui-ink-3) 45%, transparent);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.scroll::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--ui-ink-3) 70%, transparent); background-clip: content-box }

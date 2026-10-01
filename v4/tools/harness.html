@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-CN" data-fontsize="1" data-motion="on" data-ui="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>晴天以后 · 截图工装</title>
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/scenes.css">
+  <link rel="stylesheet" href="../css/ui.css">
+  <style>
+    body { overflow: hidden }
+  </style>
+</head>
+<body>
+<div class="app">
+  <main class="game" id="game" aria-label="晴天以后，校园视觉小说">
+    <header class="hud">
+      <div class="chips">
+        <div class="chip chapter" id="chapterChip">第一章 · 九月</div>
+        <div class="chip place" id="placeChip">校门口</div>
+      </div>
+      <div class="toolbar" role="toolbar">
+        <button class="tb" id="backBtn" type="button">↶ 返回<span class="k">⌫</span></button>
+        <button class="tb" id="logBtn" type="button">☰ 记录<span class="k">L</span></button>
+        <button class="tb" id="autoBtn" type="button" aria-pressed="false">▷ 自动<span class="k">A</span></button>
+        <button class="tb" id="skipBtn" type="button" aria-pressed="false">» 快进<span class="k">Ctrl</span></button>
+        <button class="tb" id="musicBtn" type="button" aria-pressed="false">♪ 声音</button>
+        <button class="tb" id="saveBtn" type="button">🖫 存档<span class="k">S</span></button>
+        <button class="tb" id="menuBtn" type="button">≡ 菜单<span class="k">Esc</span></button>
+      </div>
+    </header>
+    <aside class="bonds hidden" id="bonds"></aside>
+    <div class="characters" id="characters" aria-hidden="true"></div>
+    <div class="choices hidden" id="choices" role="group"></div>
+    <section class="dialogue" id="dialogue" aria-live="polite">
+      <div class="speaker" id="speaker"></div>
+      <div class="line scroll" id="line"></div>
+      <div class="dialogue-foot">
+        <span class="hint-text" id="hint"></span>
+        <button class="nextLine" id="nextBtn" type="button">继续 <i>↘</i></button>
+      </div>
+    </section>
+    <div class="progress" id="progressBar" aria-hidden="true"></div>
+    <div class="chapter-card" id="chapterCard" aria-hidden="true"></div>
+    <div class="overlay hidden" id="overlay" role="dialog" aria-modal="true"><div class="panel" id="panel"></div></div>
+    <div class="toast-wrap" id="toasts" aria-live="polite"></div>
+    <div class="ach-pop" id="achPop" aria-live="polite"></div>
+  </main>
+</div>
+
+<script src="../js/util.js"></script>
+<script src="../js/palette.js"></script>
+<script src="../js/art.js"></script>
+<script src="../js/character.js"></script>
+<script src="../js/audio.js"></script>
+<script src="../js/stage.js"></script>
+<script src="../js/story.js"></script>
+<script src="../js/storage.js"></script>
+<script src="../js/ui.js"></script>
+<script src="../js/engine.js"></script>
+<script src="../js/main.js"></script>
+<script>
+// 截图工装：?node=xxx&panel=settings&time=night&flags=open,creative,rest&chapter=0&motion=off
+(function () {
+  const q = new URLSearchParams(location.search);
+  const errors = [];
+  window.__SHOT_ERRORS = errors;
+  window.addEventListener('error', (e) => errors.push(String(e.message) + ' @ ' + (e.filename || '') + ':' + (e.lineno || '')));
+  window.addEventListener('unhandledrejection', (e) => errors.push('promise: ' + e.reason));
+
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      const SP = window.SP;
+      if (q.get('motion') === 'off') {
+        document.documentElement.dataset.motion = 'off';
+        SP.stage.reduced = true;
+      }
+      const node = q.get('node');
+      if (node) {
+        SP.engine.init(null);
+        const flags = {};
+        if (q.get('flags')) q.get('flags').split(',').forEach((f) => (flags[f] = 1));
+        SP.engine.state.flags = flags;
+        // 预置羁绊，便于观察羁绊条
+        SP.engine.state.bonds = { man: 4, yan: 3, family: 2, self: 5 };
+        if (q.get('time') || q.get('weather')) {
+          const n = SP.story.NODES[node];
+          if (n) { if (q.get('time')) n.time = q.get('time'); if (q.get('weather')) n.weather = q.get('weather'); }
+        }
+        if (q.get('chapter') === '1') SP.engine.chapter = SP.story.NODES[node].chapter;
+        SP.ui.paintBonds();
+        SP.engine.show(node, { instant: true, noCard: true });
+        SP.engine.finishText();
+        const box = document.getElementById('savePanelSlot');
+        if (q.get('cards') === '1') SP.stage.el.classList.add('no-shadow');
+      } else if (q.get('cover') === '1') {
+        SP.ui.showCover();
+      } else if (q.get('panel')) {
+        SP.engine.init(null);
+        SP.engine.state.flags = { open: 1, creative: 1, rest: 1, explore: 1, watched: 1 };
+        SP.engine.state.bonds = { man: 5, yan: 4, family: 3, self: 6 };
+        SP.engine.state.id = 'roof';
+        SP.engine.state.choices = 7;
+        SP.engine.state.log = [
+          { kind: 'say', speaker: '小满', text: '我的短片没选上。难过了半小时，后来发现里面有两个镜头我还挺喜欢。', place: '宿舍' },
+          { kind: 'choice', speaker: '我的选择', text: '陪她把短片重看一遍', place: '宿舍' },
+          { kind: 'say', speaker: '阿言', text: '我能决定的通常只是下一步。下一步走完，人也会变。', place: '教学楼天台' },
+        ];
+        SP.storage.markRead(Object.keys(SP.story.NODES).slice(0, 30));
+        SP.storage.unlockEnding('research_lab');
+        SP.storage.unlockEnding('create_film');
+        SP.storage.unlockAchievement('begin');
+        SP.storage.unlockAchievement('firstChoice');
+        const p = q.get('panel');
+        if (p === 'settings') SP.ui.openSettings();
+        if (p === 'save') SP.ui.openSaves('save');
+        if (p === 'load') SP.ui.openSaves('load');
+        if (p === 'log') SP.ui.openLog();
+        if (p === 'gallery') SP.ui.openGallery();
+        if (p === 'achievements') SP.ui.openAchievements();
+        if (p === 'flow') SP.ui.openFlow();
+        if (p === 'menu') SP.ui.openMenu();
+        if (p === 'ending') SP.ui.showEnding();
+      }
+      document.title = 'ready';
+    }, 120);
+  });
+})();
+</script>
+</body>
+</html>

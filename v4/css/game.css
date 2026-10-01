@@ -1,0 +1,395 @@
+/*!
+ * 留一盏灯 · 漫游版  |  game.css
+ * 自由行动层的样式：场景人物标记、漫游对话框、校园地图、任务手账。
+ * 全部走 --ui-* 变量，夜读模式自动跟随。
+ */
+
+/* ================================ 漫游层 ================================ */
+
+.roam-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+.roam-layer.hidden { display: none }
+.roam-layer > * { pointer-events: auto }
+
+/* 人物标记 */
+.npc-spot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  animation: npc-float 5.2s var(--ease) infinite alternate;
+  filter: drop-shadow(0 6px 14px rgba(30, 52, 50, 0.28));
+}
+.npc-spot:nth-child(2n) { animation-duration: 6.4s; animation-delay: -1.2s }
+@keyframes npc-float {
+  from { transform: translate(-50%, -50%) translateY(0) }
+  to   { transform: translate(-50%, -50%) translateY(-6px) }
+}
+.npc-face {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--ui-panel);
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--ui-accent) 60%, transparent);
+  background: var(--ui-panel);
+}
+.npc-face svg { display: block; width: 100%; height: auto; margin-top: -8px }
+.npc-name {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--ui-ink);
+  background: var(--ui-panel);
+  border: 1px solid color-mix(in srgb, var(--ui-ink) 22%, transparent);
+  border-radius: var(--r-pill);
+  padding: 2px 9px;
+  white-space: nowrap;
+}
+.npc-spot:hover .npc-face { box-shadow: 0 0 0 3px var(--ui-accent) }
+.npc-spot:hover .npc-name { background: var(--ui-accent); color: var(--ui-panel); border-color: transparent }
+.npc-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #d9a066;
+  border: 2px solid var(--ui-panel);
+  animation: npc-dot-pulse 1.9s var(--ease) infinite;
+}
+@keyframes npc-dot-pulse {
+  0%, 100% { transform: scale(1); opacity: 1 }
+  50% { transform: scale(1.35); opacity: 0.72 }
+}
+
+/* 看一看 */
+.look-spot {
+  position: absolute;
+  right: 6%;
+  bottom: calc(3.4% + 74px);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: var(--ui-ink);
+  background: color-mix(in srgb, var(--ui-panel) 92%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--ui-ink) 34%, transparent);
+  border-radius: var(--r-pill);
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+.look-spot:hover { background: var(--ui-panel); transform: translateY(-2px) }
+.look-spot.hidden { display: none }
+
+.look-card {
+  position: absolute;
+  left: 50%;
+  top: 26%;
+  transform: translateX(-50%);
+  width: min(560px, 76%);
+  padding: var(--sp-5) var(--sp-6);
+  border-radius: var(--r-lg);
+  border: 1px solid color-mix(in srgb, var(--ui-ink) 18%, transparent);
+  background: var(--ui-panel);
+  box-shadow: var(--sh-3);
+  cursor: pointer;
+  animation: look-in 0.32s var(--ease);
+}
+.look-card.hidden { display: none }
+@keyframes look-in { from { opacity: 0; transform: translateX(-50%) translateY(12px) } }
+.look-title {
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  color: var(--ui-accent);
+  margin-bottom: 8px;
+}
+.look-text { font-size: 15px; line-height: 1.85; color: var(--ui-ink) }
+
+/* ================================ 漫游 HUD ================================ */
+
+.roam-hud {
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  bottom: 3.4%;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  padding: 11px var(--sp-5);
+  border-radius: var(--r-lg);
+  border: 1px solid color-mix(in srgb, var(--ui-ink) 16%, transparent);
+  background: color-mix(in srgb, var(--ui-panel) 94%, transparent);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--sh-2);
+}
+.roam-obj { display: flex; flex-direction: column; gap: 3px; min-width: 0 }
+.roam-obj b {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--ui-accent);
+  font-weight: 600;
+}
+.roam-obj span { font-size: 14.5px; color: var(--ui-ink); line-height: 1.5 }
+.roam-obj em { font-style: normal; font-size: 12px; color: var(--ui-ink-3) }
+.roam-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap }
+.roam-btn {
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid color-mix(in srgb, var(--ui-ink) 26%, transparent);
+  background: transparent;
+  color: var(--ui-ink);
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
+}
+.roam-btn:hover { background: color-mix(in srgb, var(--ui-ink) 8%, transparent) }
+.roam-btn.primary {
+  background: var(--ui-accent);
+  border-color: transparent;
+  color: #fff;
+}
+.roam-btn.primary:hover { filter: brightness(1.08) }
+.roam-btn:disabled { opacity: 0.55; cursor: default; filter: none }
+
+/* ================================ 漫游对话 ================================ */
+
+.roam-dialog {
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  bottom: calc(3.4% + 68px);
+  z-index: 8;
+  display: flex;
+  gap: var(--sp-4);
+  align-items: flex-start;
+  max-height: 36%;
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--r-lg);
+  border: 1px solid color-mix(in srgb, var(--ui-ink) 18%, transparent);
+  background: var(--ui-panel);
+  box-shadow: var(--sh-3);
+  animation: rd-in 0.26s var(--ease);
+}
+.roam-dialog.hidden { display: none }
+@keyframes rd-in { from { opacity: 0; transform: translateY(14px) } }
+
+.rd-face {
+  flex: 0 0 auto;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid color-mix(in srgb, var(--ui-accent) 45%, transparent);
+  background: color-mix(in srgb, var(--ui-ink) 6%, var(--ui-panel));
+}
+.rd-face svg { display: block; width: 100%; height: auto; margin-top: -12px }
+.rd-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 7px }
+.rd-name {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: var(--ui-accent);
+}
+.rd-text { font-size: 15.5px; line-height: 1.85; color: var(--ui-ink) }
+.rd-text.pop { animation: rd-pop 0.3s var(--ease) }
+@keyframes rd-pop { from { opacity: 0; transform: translateY(4px) } }
+.rd-choices { display: flex; gap: 8px; flex-wrap: wrap }
+.rd-choices:empty { display: none }
+.rd-choice {
+  font: inherit;
+  font-size: 13.5px;
+  padding: 8px 18px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--ui-accent);
+  background: transparent;
+  color: var(--ui-ink);
+  cursor: pointer;
+}
+.rd-choice.primary { background: var(--ui-accent); color: #fff }
+.rd-choice.ghost { border-color: color-mix(in srgb, var(--ui-ink) 30%, transparent) }
+.rd-choice:hover { filter: brightness(1.06); transform: translateY(-1px) }
+.rd-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px }
+.rd-hint { font-size: 11.5px; color: var(--ui-ink-3) }
+.rd-next {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 16px;
+  border-radius: var(--r-pill);
+  border: 1px solid color-mix(in srgb, var(--ui-ink) 24%, transparent);
+  background: transparent;
+  color: var(--ui-ink);
+  cursor: pointer;
+}
+.rd-next:hover { background: color-mix(in srgb, var(--ui-ink) 7%, transparent) }
+
+/* ================================= 地图 ================================= */
+
+.map-svg-wrap { margin: 4px 0 2px }
+.map-svg { display: block; width: 100%; height: auto; max-height: 62vh }
+.map-frame { fill: color-mix(in srgb, var(--ui-panel) 72%, transparent); stroke: color-mix(in srgb, var(--ui-ink) 20%, transparent); stroke-width: 1.5 }
+.map-title { font-size: 15px; letter-spacing: 0.28em; fill: var(--ui-accent); font-weight: 600 }
+.map-compass { fill: none; stroke: color-mix(in srgb, var(--ui-ink) 34%, transparent); stroke-width: 1.4 }
+.map-needle { fill: var(--ui-accent) }
+.map-n { font-size: 10px; fill: var(--ui-ink-3); text-anchor: middle; letter-spacing: 0.1em }
+.map-road { stroke: color-mix(in srgb, var(--ui-ink) 30%, transparent); stroke-width: 4; fill: none; stroke-linecap: round; stroke-dasharray: 1 9 }
+.map-tree { fill: color-mix(in srgb, var(--ui-accent) 34%, transparent) }
+.map-lake { fill: color-mix(in srgb, var(--ui-accent) 16%, transparent); stroke: color-mix(in srgb, var(--ui-accent) 40%, transparent); stroke-width: 1.4 }
+.map-lake2 { fill: color-mix(in srgb, var(--ui-accent) 10%, transparent) }
+.map-lake-label { font-size: 11px; fill: color-mix(in srgb, var(--ui-accent) 70%, transparent); letter-spacing: 0.1em }
+.map-track { fill: none; stroke: color-mix(in srgb, var(--ui-ink) 34%, transparent); stroke-width: 3; stroke-dasharray: 7 5 }
+
+.loc { cursor: pointer }
+.loc-box { fill: var(--ui-panel); stroke: var(--ui-ink); stroke-width: 2 }
+.loc-name { font-size: 11.5px; fill: var(--ui-ink); letter-spacing: 0.05em }
+.loc:hover .loc-box { fill: color-mix(in srgb, var(--ui-accent) 22%, var(--ui-panel)) }
+.loc-ring { fill: none; stroke: var(--ui-accent); stroke-width: 2.4; stroke-dasharray: 5 5; animation: loc-spin 9s linear infinite }
+.loc-dot { fill: var(--ui-accent) }
+@keyframes loc-spin { to { transform: rotate(360deg) } }
+.loc-ring { transform-box: fill-box; transform-origin: center }
+.loc-qmark { fill: #d9a066; stroke: var(--ui-panel); stroke-width: 1.6 }
+.loc-qmark-turnin { fill: #cf7f57 }
+.loc-qmark-offer { fill: #d9a066 }
+.loc-qmark-step { fill: var(--ui-accent) }
+.loc-star { fill: #cf7f57; stroke: var(--ui-panel); stroke-width: 1 }
+.loc.locked { opacity: 0.4 }
+.loc.locked .loc-box { stroke-dasharray: 4 3 }
+.loc.locked:hover .loc-box { fill: var(--ui-panel) }
+.loc:focus { outline: none }
+.loc:focus-visible .loc-box { stroke: var(--ui-accent); stroke-width: 3.4 }
+
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--ui-ink-3);
+  margin-top: 8px;
+  justify-content: center;
+}
+.map-legend span { display: inline-flex; align-items: center; gap: 6px }
+.lg { width: 10px; height: 10px; border-radius: 50%; display: inline-block }
+.lg-cur { border: 2px dashed var(--ui-accent) }
+.lg-q { background: #d9a066 }
+.lg-star { background: #cf7f57; clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%) }
+.lg-lock { background: color-mix(in srgb, var(--ui-ink) 34%, transparent) }
+.map-note { font-size: 12.5px; color: var(--ui-ink-3); text-align: center; margin-top: 6px; line-height: 1.7 }
+
+/* ================================ 任务手账 ================================ */
+
+.j-main {
+  border-left: 3px solid var(--ui-accent);
+  padding: 2px 0 2px 12px;
+  margin-bottom: var(--sp-4);
+}
+.j-main p { font-size: 14px; color: var(--ui-ink); margin-top: 3px; line-height: 1.7 }
+.j-section { margin-bottom: var(--sp-5) }
+.j-section h2, .j-people h2, .j-notes h2 {
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  color: var(--ui-accent);
+  margin-bottom: 9px;
+  font-weight: 600;
+}
+.j-sub { font-size: 13px; color: var(--ui-ink-3); line-height: 1.7 }
+.j-quests { display: grid; gap: 11px }
+.q-card {
+  border: 1px solid color-mix(in srgb, var(--ui-ink) 16%, transparent);
+  border-left: 3px solid color-mix(in srgb, var(--ui-accent) 55%, transparent);
+  border-radius: var(--r-md);
+  padding: 12px 15px;
+  background: color-mix(in srgb, var(--ui-panel) 55%, transparent);
+}
+.q-card.ready { border-left-color: #cf7f57; background: color-mix(in srgb, #cf7f57 8%, transparent) }
+.q-title-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap }
+.q-title-row h3 { font-size: 15px; color: var(--ui-ink); font-weight: 600 }
+.q-badge {
+  font-size: 11px;
+  color: #fff;
+  background: #cf7f57;
+  border-radius: var(--r-pill);
+  padding: 2px 9px;
+}
+.q-from { font-size: 12px; color: var(--ui-ink-3); margin: 3px 0 8px }
+.q-steps { list-style: none; display: grid; gap: 5px }
+.q-step { display: flex; gap: 8px; font-size: 13px; color: var(--ui-ink-3); line-height: 1.6 }
+.q-step.done { color: color-mix(in srgb, var(--ui-ink) 42%, transparent); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--ui-ink) 30%, transparent) }
+.q-step.now { color: var(--ui-ink) }
+.q-mark { flex: 0 0 auto; width: 12px; text-align: center; color: var(--ui-accent) }
+.q-step.now .q-mark { color: #cf7f57 }
+
+.j-rumor {
+  font-size: 13px;
+  color: var(--ui-ink-3);
+  padding: 7px 0;
+  border-bottom: 1px dashed color-mix(in srgb, var(--ui-ink) 16%, transparent);
+  line-height: 1.7;
+}
+.j-rumor em { font-style: normal; color: var(--ui-accent) }
+
+.j-done { list-style: none; display: grid; gap: 6px }
+.j-done li { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--ui-ink-3) }
+.j-done em { font-style: normal; color: color-mix(in srgb, var(--ui-ink) 40%, transparent) }
+
+.j-note-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px }
+.j-note {
+  border: 1px solid color-mix(in srgb, var(--ui-ink) 14%, transparent);
+  border-radius: var(--r-sm);
+  padding: 9px 12px;
+  background: color-mix(in srgb, var(--ui-panel) 70%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.j-note b { font-size: 13.5px; color: var(--ui-ink); font-weight: 600 }
+.j-note span { font-size: 11.5px; color: var(--ui-ink-3) }
+
+.j-faces { display: flex; flex-wrap: wrap; gap: 10px }
+.j-face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 76px;
+}
+.j-face .face {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1.5px solid color-mix(in srgb, var(--ui-ink) 24%, transparent);
+  background: var(--ui-panel);
+}
+.j-face .face svg { display: block; width: 100%; height: auto; margin-top: -6px }
+.j-face b { font-size: 12.5px; color: var(--ui-ink); font-weight: 600 }
+.j-face .dots { font-size: 9px; letter-spacing: 2px; color: var(--ui-accent) }
+
+/* ================================ 窄屏适配 ================================ */
+
+@media (max-width: 640px) {
+  .roam-hud { padding: 9px var(--sp-4); gap: var(--sp-3) }
+  .roam-obj span { font-size: 13px }
+  .roam-btn { font-size: 12px; padding: 6px 11px }
+  .roam-dialog { gap: var(--sp-3); padding: var(--sp-3) var(--sp-4) }
+  .rd-face { width: 58px; height: 58px }
+  .rd-face svg { margin-top: -9px }
+  .npc-face { width: 48px; height: 48px }
+  .j-note-grid { grid-template-columns: 1fr }
+  .look-spot { bottom: calc(3.4% + 128px); font-size: 12px }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .npc-spot, .npc-dot, .loc-ring { animation: none }
+}
