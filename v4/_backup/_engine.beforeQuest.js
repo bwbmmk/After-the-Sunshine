@@ -66,25 +66,6 @@
     if (Engine.state.history.length > 240) Engine.state.history.shift();
   }
 
-  /* ------------------------------ 世界分路 ------------------------------ */
-
-  /**
-   * 把世界（自由行动里做过的委托）推导出来的 flag 并进叙事状态。
-   *
-   * 漫游版的主线不再有选项：每一处分岔都读 flag，而 flag 是
-   * 「这个月你把时间花在谁身上」写下的。所以每次渲染 / 求值 next /
-   * 存档之前，都要先把世界那一半补上。
-   *
-   * 并进来之后不撤销 —— 存档回退能退回剧情，但做过的委托不会消失。
-   */
-  function syncWorldFlags() {
-    if (!SP.game || !SP.game.derivedFlags || !Engine.state) return;
-    const wf = SP.game.derivedFlags();
-    if (!wf) return;
-    if (!Engine.state.flags) Engine.state.flags = {};
-    for (const k in wf) Engine.state.flags[k] = wf[k];
-  }
-
   /* -------------------------------- 推进 --------------------------------- */
 
   function go(toId, opt = {}) {
@@ -116,7 +97,6 @@
   function advanceNext() {
     const node = ST.NODES[Engine.state.id];
     if (!node || node.ending) return;
-    syncWorldFlags();
     let nextId = node.next;
     if (typeof nextId === 'function') nextId = nextId(Engine.state.flags);
     // 闸门节点：先交给自由行动，走到目标地点再继续主线
@@ -358,7 +338,6 @@
     stopAuto();
     Engine.visible = false;
     Engine.state.id = id;
-    syncWorldFlags();
 
     if (node.ending) { Engine.state.flags.ending = ST.resolveEnding(Engine.state.flags); Engine.ended = true; SP.ui.showEnding(); saveAuto(); return; }
 
@@ -501,7 +480,6 @@
     if (Engine.busy) { setTimeout(fastForward, 100); return; }
     const node = ST.NODES[Engine.state.id];
     if (!node || node.ending || node.choices) { Engine.skip = false; SP.ui.syncModes(); return; }
-    syncWorldFlags();
     const nextId = typeof node.next === 'function' ? node.next(Engine.state.flags) : node.next;
     if (!nextId) { Engine.skip = false; SP.ui.syncModes(); return; }
     const read = SP.storage.getProgress().readNodes.includes(nextId);
@@ -530,7 +508,6 @@
   function saveAuto() {
     const s = SP.storage.getSettings();
     if (!s.autoSave) return;
-    syncWorldFlags();
     const node = ST.NODES[Engine.state.id];
     const text = typeof node.text === 'function' ? node.text(Engine.state.flags) : node.text || '';
     SP.storage.writeSlot('auto', {
@@ -609,7 +586,6 @@
   /* -------------------------------- 成就 --------------------------------- */
 
   function checkAchievements() {
-    syncWorldFlags();
     const p = SP.storage.getProgress();
     const f = Engine.state.flags;
     const b = Engine.state.bonds;
@@ -639,7 +615,7 @@
     init, show, go, next, back, pick, restart,
     toggleAuto, toggleSkip, stopAuto, fastForward,
     saveTo, loadFrom, saveAuto, checkAchievements, currentChapterIndex,
-    addBonds, renderChoices, finishText, stopTyping, markRead, syncWorldFlags,
+    addBonds, renderChoices, finishText, stopTyping, markRead,
     SIDES,
   });
   // Object.assign 会把上面的 getter 求值成静态快照；这里补成实时访问器，

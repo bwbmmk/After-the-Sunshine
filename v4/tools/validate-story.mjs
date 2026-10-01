@@ -25,10 +25,49 @@ load('js/util.js');            // 颜色与工具（palette 依赖它）
 load('js/palette.js');
 load('js/character.js');       // 立绘预设：角色名不再写死，随剧本走
 load('js/story.js');
+load('js/quests.js');          // 委托表：主线分路的 flag 取值从这儿来
 
 const { NODES, ENDINGS, CHAPTERS, ACHIEVEMENTS, START, resolveEnding, segments } = win.SP.story;
 const PAL = win.SP.palette;
 const CHAR = win.SP.character;
+
+/* ── flag 样本 ──────────────────────────────────────────────────────
+ * 漫游版的节点 next 可以是函数：通向哪条支线由世界里的 flag 决定。
+ * 静态查不出函数会返回什么，所以先按「剧本里实际会出现哪些取值」
+ * 造一个样本集，再用它把每条 next 都求值一遍。
+ * 取值来源是 quests.js 的 setFlags —— 也就是玩家真能造出来的那些。
+ * ------------------------------------------------------------------ */
+const FLAG_DOMAIN = {};
+for (const qid in win.SP.quests.QUESTS) {
+  const f = win.SP.quests.QUESTS[qid].setFlags;
+  if (!f) continue;
+  for (const k in f) (FLAG_DOMAIN[k] || (FLAG_DOMAIN[k] = new Set())).add(f[k]);
+}
+const FLAG_KEYS = Object.keys(FLAG_DOMAIN);
+const FLAG_SAMPLES = [{}];
+for (const k of FLAG_KEYS) {
+  const vals = [...FLAG_DOMAIN[k]];
+  const next = [];
+  for (const base of FLAG_SAMPLES) for (const v of vals) next.push(Object.assign({}, base, { [k]: v }));
+  FLAG_SAMPLES.length = 0;
+  FLAG_SAMPLES.push(...next);
+}
+if (FLAG_SAMPLES.length > 4000) FLAG_SAMPLES.length = 4000;   // 兜底，防止组合爆炸
+
+/** 一个节点的所有出边（字符串 next、函数 next 的全部取值、选项） */
+function targetsOf(n) {
+  const out = [];
+  if (typeof n.next === 'string') out.push(n.next);
+  else if (typeof n.next === 'function') {
+    for (const f of FLAG_SAMPLES) {
+      let t;
+      try { t = n.next(f); } catch { t = null; }
+      if (typeof t === 'string' && !out.includes(t)) out.push(t);
+    }
+  }
+  if (n.choices) for (const c of n.choices) if (c.to) out.push(c.to);
+  return out;
+}
 
 const ALLOWED_SCENE = new Set(Object.keys(PAL.SCENES));
 const ALLOWED_TIME = new Set(PAL.TIME_ORDER.concat(['dawn', 'morning', 'day', 'afternoon', 'dusk', 'night', 'deep']));
@@ -50,6 +89,17 @@ for (const id of ids) {
   if (n.next) {
     const t = typeof n.next === 'function' ? null : n.next;
     if (t && !NODES[t]) E(`节点 ${id}.next → 不存在的节点 "${t}"`);
+    if (typeof n.next === 'function') {
+      const seenT = new Set();
+      for (const f of FLAG_SAMPLES) {
+        let to;
+        try { to = n.next(f); } catch (err) { E(`节点 ${id}.next 在 flag ${JSON.stringify(f)} 下抛错：${err.message}`); break; }
+        if (to == null) { E(`节点 ${id}.next 在 flag ${JSON.stringify(f)} 下没有返回目标`); break; }
+        if (!NODES[to]) { E(`节点 ${id}.next → 不存在的节点 "${to}"`); break; }
+        seenT.add(to);
+      }
+      if (!seenT.size) E(`节点 ${id}.next 是函数，但没有任何 flag 组合能给出目标`);
+    }
   }
   if (n.choices) {
     n.choices.forEach((c, i) => {
@@ -70,8 +120,7 @@ while (stack.length) {
   reachable.add(id);
   const n = NODES[id];
   if (!n) continue;
-  if (typeof n.next === 'string') stack.push(n.next);
-  if (n.choices) for (const c of n.choices) if (c.to) stack.push(c.to);
+  for (const t of targetsOf(n)) stack.push(t);
 }
 for (const id of ids) if (!reachable.has(id)) E(`节点 ${id} 从起点无法到达（孤儿节点）`);
 
@@ -157,8 +206,7 @@ while (q.length) {
   order.push(id);
   const n = NODES[id];
   if (!n) continue;
-  if (typeof n.next === 'string') q.push(n.next);
-  if (n.choices) for (const c of n.choices) q.push(c.to);
+  for (const t of targetsOf(n)) q.push(t);
 }
 for (const id of order) {
   const n = NODES[id];

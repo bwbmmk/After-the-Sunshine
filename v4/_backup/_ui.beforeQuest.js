@@ -234,23 +234,8 @@
   }
 
   /* -------------------------------- 菜单 --------------------------------- */
-  /* 口袋：从前只装纸片，现在装的是别人递过来的东西。
-   * 分三层 —— 手上的事（还要交出去）、留念（熟到底才有）、角落里的小东西；
-   * 纸片仍然收在最下面，和从前一样。 */
-  function pocketItemCard(it) {
-    return h('article.pocket-item', { class: 'k-' + it.kind },
-      h('span.pi-icon', { text: it.icon || '▫' }),
-      h('div.pi-body', {},
-        h('b', { text: it.name }),
-        it.from ? h('span.pi-from', { text: '来自 ' + it.from }) : null,
-        h('p.pi-desc', { text: it.desc })
-      )
-    );
-  }
-
   function openNotebook() {
     const ids = (SP.engine.state && SP.engine.state.memories) || [];
-    const secs = (SP.game && SP.game.pocketSections) ? SP.game.pocketSections() : [];
     const pages = h('div.notebook-grid');
     for (const id of ids) {
       const m = ST.MEMORIES[id]; if (!m) continue;
@@ -261,32 +246,8 @@
     for (const m of extras) {
       pages.append(h('article.notebook-page.from-quest', {}, h('div.eyebrow', {text:m.date}), h('h2',{text:m.title}), h('p',{text:m.body})));
     }
-
-    const total = (SP.game && SP.game.ownedItems) ? SP.game.ownedItems().length : 0;
-    const body = h('div', {});
-    if (secs.length) {
-      for (const s of secs) {
-        body.append(h('section.pocket-sec', { class: 'sec-' + s.key },
-          h('h2', {}, h('span', { text: s.title }), h('em', { text: s.items.length })),
-          h('p.pocket-sub', { text: s.sub }),
-          h('div.pocket-grid', {}, ...s.items.map(pocketItemCard))
-        ));
-      }
-    } else {
-      body.append(h('p', { text: '口袋还是空的。别人递给你的东西、顺手捡的小东西、还有熟到最后那个人给你的东西，都会落在这儿。' }));
-    }
-    if (ids.length || extras.length) {
-      body.append(h('section.pocket-sec.sec-note', {},
-        h('h2', {}, h('span', { text: '纸片' }), h('em', { text: String(ids.length + extras.length) })),
-        h('p.pocket-sub', { text: '剧情里收起的，和交差时落下的。' }),
-        pages));
-    }
-
-    const eyebrow = total
-      ? '口袋里 ' + total + ' 件东西'
-      : '一张纸，也能记住一天';
-    const panel = openPanel(h('div', {}, head('口袋里的东西', eyebrow), body), { wide: true, mode: 'notebook' });
-    panel.append(h('div.panel-foot', {}, btn('收好，继续故事', 'primary', closePanel)));
+    const panel = openPanel(h('div', {}, head('口袋里的东西','一张纸，也能记住一天'), ids.length ? pages : h('p',{text:'还没有收起任何东西。先走进故事里吧。'})), {wide:true,mode:'notebook'});
+    panel.append(h('div.panel-foot',{},btn('收好，继续故事','primary',closePanel)));
   }
 
   function openMenu() {
@@ -732,9 +693,6 @@
     const curriculum = SS.getProgress();
     const nodes = ST.NODES;
     const start = ST.START;
-    // 漫游版的分岔由 flag 决定，节点 next 是函数：拿世界的取样把它摊开
-    const samples = (SP.game && SP.game.flagSamples) ? SP.game.flagSamples() : [{}];
-    const edges = ST.allEdges(samples);
 
     // 按 BFS 深度布局
     const depth = {};
@@ -746,7 +704,7 @@
       order.push(id);
       const node = nodes[id];
       if (!node) continue;
-      for (const [, to] of edges.filter((e) => e[0] === id)) {
+      for (const [, to] of ST.allEdges().filter((e) => e[0] === id)) {
         if (depth[to] == null) { depth[to] = depth[id] + 1; q.push(to); }
       }
     }
@@ -766,7 +724,7 @@
     });
 
     const edgeSvg = [];
-    for (const [from, to] of edges) {
+    for (const [from, to] of ST.allEdges()) {
       if (!pos[from] || !pos[to]) continue;
       const a = pos[from], b = pos[to];
       const x1 = a.x + BW, y1 = a.y + BH / 2, x2 = b.x, y2 = b.y + BH / 2;
@@ -784,8 +742,7 @@
       const node = nodes[id];
       const seen = read.includes(id);
       const label = node.ending ? '结局' : (node.place || id);
-      const branch = typeof node.next === 'function' || node.choices;
-      const color = node.ending ? '#c9714f' : branch ? '#4f9187' : '#6b8fae';
+      const color = node.ending ? '#c9714f' : node.choices ? '#4f9187' : '#6b8fae';
       return (
         `<g class="fl-node${seen ? '' : ' unread'}${id === current ? ' current' : ''}">` +
         `<rect x="${p.x}" y="${p.y}" width="${BW}" height="${BH}" rx="8" fill="${color}"/>` +
@@ -799,10 +756,10 @@
 
     const panel = openPanel(
       h('div', {}, head('分支图', '这一学期有多少条路'),
-        h('p', { text: `共 ${order.length} 个场景节点、${edges.length} 条连接。绿框是会分岔的地方——走哪一条，由这个月在自由活动里把时间花在谁身上决定。` }),
+        h('p', { text: `共 ${order.length} 个场景节点、${ST.allEdges().length} 条连接。亮起的是你走过的部分。` }),
         wrap,
         h('div.legend', {},
-          h('span', {}, h('i', { style: { background: '#4f9187' } }), '会分岔的节点'),
+          h('span', {}, h('i', { style: { background: '#4f9187' } }), '含选项的节点'),
           h('span', {}, h('i', { style: { background: '#6b8fae' } }), '普通节点'),
           h('span', {}, h('i', { style: { background: '#c9714f' } }), '结局'),
           h('span', {}, h('i', { style: { background: 'var(--ui-line)' } }), '未走过的部分')
@@ -815,34 +772,15 @@
 
   /* -------------------------------- 结局 --------------------------------- */
 
-  function worldOf() {
-    return (SP.game && SP.game.ensure) ? SP.game.ensure() : null;
-  }
-  function doneCount() {
-    const w = worldOf();
-    if (!w) return 0;
-    return Object.keys(w.quests || {}).filter((q) => w.quests[q].done).length;
-  }
-  function pocketCount() {
-    return (SP.game && SP.game.ownedItems) ? SP.game.ownedItems().length : 0;
-  }
-
-  /* 尾声补记：读的是这一局真实做过的事，不再读那些已经消失的 flag */
   function endingExtras() {
     const f = SP.engine.state.flags;
+    const b = SP.engine.state.bonds;
     const out = [];
+    if (f.open) out.push('妈妈后来问起那顿蒸蛋。这次你们终于知道水该放多少。');
+    else if (f.private) out.push('回家前，你把食堂的照片发给妈妈，接上了那次没讲完的电话。');
     if (f.night === 'stop') out.push('寝室的群公告还留着那句话：今晚不再加镜头。');
-    const w = (SP.game && SP.game.ensure) ? SP.game.ensure() : null;
-    if (w) {
-      const done = Object.keys(w.quests || {}).filter((q) => w.quests[q].done).length;
-      if (done) out.push('这一学期，你替别人办了 ' + done + ' 件事。');
-      const full = Object.keys(w.rapport || {}).filter((n) => w.rapport[n] >= SP.game.RAPPORT_MAX);
-      if (full.length) out.push('熟到不能再熟的人：' + full.map((n) => SP.game.NPCS[n].name).join('、') + '。');
-      const eggs = SP.game.itemsOfKind('egg').length;
-      if (eggs) out.push('口袋里还躺着 ' + eggs + ' 件在角落里顺手捡的小东西。');
-      const held = SP.game.itemsOfKind('quest').length;
-      if (held) out.push('有 ' + held + ' 件别人给的东西还在你手上——总得还回去。');
-    }
+    if (f.credit === 'shared') out.push('片尾的三个名字放在一起，技术分工另起了一页。');
+    if (f.time === 'film') out.push('那份迟到的课堂材料终于补交了，你也认真谢过帮你排练的同学。');
     return out;
   }
 
@@ -873,8 +811,7 @@
       h(
         'div.ending-stats',
         {},
-        h('span', {}, '完成委托 ', h('b', { text: String(doneCount()) })),
-        h('span', {}, '口袋里 ', h('b', { text: String(pocketCount()) + ' 件' })),
+        h('span', {}, '本局选择 ', h('b', { text: String(st.choices) })),
         h('span', {}, '已解锁结局 ', h('b', { text: `${SS.getProgress().endings.length}/${Object.keys(ST.ENDINGS).length}` }))
       )
     );

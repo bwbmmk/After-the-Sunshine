@@ -57,7 +57,8 @@ const SHOTS = [
   { name: '15_漫游·报到日东门', kind: 'roam', window: 'w1', loc: 'campus', desc: '自由行动：小满在东门等手推车，HUD 显示主线目标' },
   { name: '16_漫游·与程野对话', kind: 'roam', window: 'w1', loc: 'dorm', talk: 'cheng', lines: 2, desc: '点人物标记开出的漫游对话框（含立绘与选项）' },
   { name: '17_校园地图', kind: 'panel', panel: 'map', window: 'w2', loc: 'club', desc: '14 处地点的手绘校园导览，含当前位置与委托标记' },
-  { name: '18_任务手账', kind: 'panel', panel: 'journal', window: 'w2', loc: 'club', desc: '委托进度、手记收藏、六位人物的熟络度' },
+  { name: '18_任务手账', kind: 'panel', panel: 'journal', window: 'w2', loc: 'club', desc: '委托进度、这个月没做的、六位人物的熟络度' },
+  { name: '19_口袋', kind: 'panel', panel: 'notebook', window: 'w2', loc: 'club', desc: '口袋分三栏：手上的事 / 留念 / 角落里的小东西' },
 ];
 
 /* ── 驱动脚本（注入到产物副本尾部） ───────────────────────────────── */
@@ -179,12 +180,14 @@ function driver(s) {
           ['begin', 'firstChoice', 'clubLife', 'nightOwl'].forEach(function (a) {
             try { SP.storage.unlockAchievement(a); } catch (err) {}
           });
-          // 漫游版新增的两个面板：先塞一份进行中的存档状态，画面才有内容可看
-          if (s.panel === 'map' || s.panel === 'journal') {
+          // 漫游版新增的三个面板：先塞一份进行中的存档状态，画面才有内容可看
+          if (s.panel === 'map' || s.panel === 'journal' || s.panel === 'notebook') {
             var w = SP.game.ensure();
             w.notes = ['q_screws', 'q_sound'];
-            w.quests = { q_screws: { stage: 1 }, q_sound: { stage: 0, done: true }, q_poster: { stage: 1 } };
-            w.rapport = { man: 3, cheng: 4, yan: 2, aunt: 3, teacher: 1, mom: 2 };
+            w.quests = { q_screws: { stage: 1 }, q_sound: { stage: 0, done: true }, q_poster: { stage: 1 }, q_line089: { stage: 2 } };
+            w.rapport = { man: 3, cheng: 4, yan: 5, aunt: 3, teacher: 1, mom: 2 };
+            w.keepsakes = ['yan'];
+            w.items = ['i_screw_bag', 'i_washer_note', 'i_form_copy', 'k_yan', 'e_garlic', 'e_bookcard', 'e_popcorn'];
             w.visited = ['campus', 'avenue', 'dorm', 'canteen', 'library', 'club'];
             if (!w.unlocked.includes('classroom')) w.unlocked.push('classroom');
             var w2 = SP.game.WINDOWS[s.window || 'w2'];
@@ -194,6 +197,7 @@ function driver(s) {
           }
           if (s.panel === 'map') SP.roam.openMap();
           if (s.panel === 'journal') SP.roam.openJournal();
+          if (s.panel === 'notebook') SP.ui.openNotebook();
           if (s.panel === 'settings') SP.ui.openSettings();
           if (s.panel === 'save') SP.ui.openSaves('save');
           if (s.panel === 'load') SP.ui.openSaves('load');

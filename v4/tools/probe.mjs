@@ -74,6 +74,17 @@ const probe = `<script id="__probe">
     o.nodesWithChoices = SP.story ? Object.keys(SP.story.NODES).filter(function (k) {
       return SP.story.NODES[k].choices && SP.story.NODES[k].choices.length;
     }).length : 0;
+    // 漫游版：分岔不再写在节点里，而是 next 函数读世界的 flag
+    o.branchNodes = SP.story ? Object.keys(SP.story.NODES).filter(function (k) {
+      return typeof SP.story.NODES[k].next === 'function';
+    }).length : 0;
+    o.branchEdges = (SP.story && SP.game) ? SP.story.allEdges(SP.game.flagSamples()).length : 0;
+    // 玩法数据（漫游版新增）
+    o.questCount = SP.game ? Object.keys(SP.game.QUESTS).length : 0;
+    o.groupCount = SP.game ? Object.keys(SP.game.GROUPS).length : 0;
+    o.itemCount = SP.game ? Object.keys(SP.game.ITEMS).length : 0;
+    o.keepCount = SP.game ? Object.keys(SP.game.KEEPSAKES).length : 0;
+    o.gameAchCount = SP.game ? SP.game.GAME_ACHIEVEMENTS.length : 0;
 
     var layers = document.querySelectorAll('#game .layer');
     o.layerCount = layers.length;
@@ -140,14 +151,13 @@ const probe = `<script id="__probe">
 
     var SP = window.SP || {};
     // 深挖节点：优先「有选项且有立绘」的节点，其次任何有选项的节点，最后退回起点
+    // 主线已经没有选项节点了：深挖改挑「有立绘、有名牌、next 是字符串」的节点
     var probeNode = null;
     if (SP.story) {
       var keys = Object.keys(SP.story.NODES);
       probeNode = keys.filter(function (k) {
         var n = SP.story.NODES[k];
-        return n.choices && n.choices.length >= 2 && n.person;
-      })[0] || keys.filter(function (k) {
-        return SP.story.NODES[k].choices && SP.story.NODES[k].choices.length >= 2;
+        return !!n.person && !n.ending && typeof n.next === 'string';
       })[0] || keys[0];
     }
 
@@ -171,8 +181,7 @@ const probe = `<script id="__probe">
     (function wait() {
       tries++;
       var lineLen = txt(document.getElementById('line')).length;
-      var choices = document.querySelectorAll('#choices .choice').length;
-      var ready = lineLen > 0 && choices > 0;
+      var ready = lineLen > 0 && txt(document.getElementById('speaker')).length > 0;
 
       if (!ready && tries < 40) return setTimeout(wait, 30);
 
@@ -222,11 +231,22 @@ const probe = `<script id="__probe">
           o.deepNodeMarkedRead = read.indexOf(probeNode) >= 0;
         } catch (e) { o.readProbeError = String(e && e.message); }
 
-        // 快进 A：在有选项的节点上应当被拒绝（fastForward 的设计行为）
+        // 快进 A：分岔节点的 next 是函数，在样本下必须都能给出真实节点
         try {
-          if (SP.engine.skip) SP.engine.toggleSkip();
-          SP.engine.toggleSkip();
-          o.skipRefusedAtChoice = (SP.engine.skip === false);
+          var samples = SP.game ? SP.game.flagSamples() : [];
+          o.flagSamples = samples.length;
+          var bad = [];
+          Object.keys(SP.story.NODES).forEach(function (k) {
+            var n = SP.story.NODES[k];
+            if (typeof n.next !== 'function') return;
+            samples.forEach(function (f) {
+              var t = null;
+              try { t = n.next(f); } catch (e) { bad.push(k + ' 抛错'); return; }
+              if (!t || !SP.story.NODES[t]) bad.push(k + ' → ' + t);
+            });
+          });
+          o.branchBad = bad.slice(0, 4);
+          o.branchOK = samples.length > 0 && bad.length === 0;
         } catch (e) { o.skipError = String(e && e.message); }
 
         // 快进 B：纯对话节点 + 前方内容已读 → 应当正常开启
@@ -326,12 +346,16 @@ const checks = [];
 const check = (name, pass, detail) => checks.push({ name, pass: !!pass, detail });
 
 check('SP 命名空间已建立', rep.ok, `${(rep.modules || []).length} 个导出`);
-// 《留一盏灯》剧本：138 节点 / 6 结局 / 5 章；成就 8 个剧情 + 5 个漫游（game.js 运行时并入）
+// 《留一盏灯》剧本：138 节点 / 6 结局 / 5 章；成就 8 个剧情 + 9 个漫游（game.js 运行时并入）
 check('剧情节点数 = 138', rep.nodeCount === 138, String(rep.nodeCount));
 check('结局数 = 6', rep.endingCount === 6, String(rep.endingCount));
-check('成就数 = 13（剧情 8 + 漫游 5）', rep.achCount === 13, String(rep.achCount));
+check('成就数 = 17（剧情 8 + 漫游 9）', rep.achCount === 17, `${rep.achCount}（漫游 ${rep.gameAchCount}）`);
 check('章节数 = 5', rep.chapters === 5, String(rep.chapters));
-check('含选项节点 = 14', rep.nodesWithChoices === 14, String(rep.nodesWithChoices));
+check('主线已无「当场选项」节点', rep.nodesWithChoices === 0, `${rep.nodesWithChoices} 个`);
+check('分岔节点 = 14（读世界 flag）', rep.branchNodes === 14, `${rep.branchNodes} 个 · 摊开后出边 ${rep.branchEdges} 条`);
+check('委托 28 / 互斥组 10 / 物品 30 / 留念 6',
+  rep.questCount === 28 && rep.groupCount === 10 && rep.itemCount === 30 && rep.keepCount === 6,
+  `委托 ${rep.questCount} · 组 ${rep.groupCount} · 物品 ${rep.itemCount} · 留念 ${rep.keepCount}`);
 check('舞台四层视差已构建', rep.layerCount >= 4, `${rep.layerCount} 层`);
 check('四层均为合法 <svg> 注入', (rep.layerHasSvgRoot || []).every(Boolean) && rep.layerHasSvgRoot.length >= 4,
   `各层元素数 ${JSON.stringify(rep.layerElCount)}`);
@@ -357,10 +381,9 @@ check('对话框有说话人', !!rep.deepSpeaker, rep.deepSpeaker + (rep.deepBad
 check('正文已排入对话行', (rep.deepLineLen || 0) > 0,
   `${rep.deepLineLen} 字「${rep.deepLineSample || ''}…」· rAF 帧数 ${rep.rafFrames}`
   + (rep.forcedFinish ? ' · 帧数不足，已用 finishText() 强制收尾' : ' · 打字机自然收敛'));
-check('选项已渲染', (rep.deepChoices || []).length >= 2 && !rep.deepChoicesHidden,
-  `${(rep.deepChoices || []).length} 项 → ${(rep.deepChoices || []).slice(0, 2).join(' ｜ ')}`
-  + `（锁定 ${rep.deepLocked} · 隐藏 ${rep.deepSecret}）`);
-check('有选项时隐藏「继续」按钮', rep.deepNextHidden && /选择/.test(rep.deepHint || ''), `提示语「${rep.deepHint}」`);
+check('选项容器保持收起（选项已挪进漫游）', rep.deepChoicesHidden === true && (rep.deepChoices || []).length === 0,
+  `#choices 隐藏 ${rep.deepChoicesHidden} · 子项 ${(rep.deepChoices || []).length}`);
+check('叙述节点显示「继续」按钮', !rep.deepNextHidden, `提示语「${rep.deepHint}」`);
 check('立绘已生成', rep.personChars >= 1 && rep.personCharEls > 20,
   `节点 ${rep.personNode} → ${rep.personChars} 个角色 / ${rep.personCharEls} 个 SVG 节点`);
 check('羁绊条显示且有条目', rep.deepBondsVisible && rep.deepBondItems >= 2,
@@ -369,7 +392,9 @@ check('地点标签随节点更新', !!rep.deepPlaceChip, rep.deepPlaceChip);
 check('已读记录写入（快进功能的前提）', rep.markReadFn && rep.deepNodeMarkedRead,
   `SP.engine.markRead ${rep.markReadFn ? '存在' : '缺失'} · 已读 ${rep.deepReadCount} 个节点`
   + (rep.deepNodeMarkedRead ? `（含当前节点 ${rep.deepNode}）` : ' ✗ 当前节点未被标记'));
-check('有选项时拒绝快进（设计行为）', rep.skipRefusedAtChoice, rep.skipError || '');
+check('每处分岔在样本下都落到真实节点', rep.branchOK,
+  rep.skipError || `${rep.flagSamples} 组 flag 取样`
+  + (rep.branchBad && rep.branchBad.length ? ` · 有问题：${rep.branchBad.join(' , ')}` : ' · 无悬挂'));
 check('已读内容可开启快进', rep.skipEngaged, `测试节点 ${rep.skipPair}${rep.skipError2 ? ' · ' + rep.skipError2 : ''}`);
 
 check('运行期无 JS 异常', (rep.errors || []).length === 0, (rep.errors || []).join(' | ') || '0 条');
