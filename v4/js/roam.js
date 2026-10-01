@@ -57,7 +57,13 @@
     if (!w.roamIntro) {
       w.roamIntro = true;
       SP.ui.toast(win.theme, 4400);
-      setTimeout(() => SP.ui.toast('亮着名字的人都可以聊聊。这个月你只有几段空档——给谁，就是选了什么。', 5200), 1700);
+      // 第一次进漫游，把这个月「要定的事」逐件点名，免得玩家不知道该干嘛
+      const left = undecidedGroups(wid);
+      const msg = left.length
+        ? '这个月有 ' + left.length + ' 件事要定：' + left.map((g) => Game.GROUPS[g].title).join('、')
+          + '。去地图上亮着名字的地方找人聊——答应谁，就是定了哪件。'
+        : '亮着名字的人都可以聊聊。';
+      setTimeout(() => SP.ui.toast(msg, 6400), 1700);
     } else {
       SP.ui.toast(win.theme, 3600);
     }
@@ -301,7 +307,7 @@
     if (activeQ.length) bits.push('委托 ' + activeQ.length + ' 件在手上');
     if (readyQ.length) bits.push(readyQ.length + ' 件可以交差');
     const left = undecidedGroups(Roam.windowId).length;
-    if (left) bits.push('还有 ' + left + ' 件事没定');
+    if (left) bits.push('还有 ' + left + ' 件事要定（找地图上亮名字的人聊）');
     $('#roamQuestCount').textContent = bits.length ? bits.join(' · ') : '这个月的事都办完了';
 
     const btn = $('#pocketBtn');
@@ -487,8 +493,9 @@
         .filter((q) => q !== seg.qid && Game.QUESTS[q].group === seg.group && Game.questState(q) === 'offer');
       if (sibs.length) {
         box.append(h('p.rd-groupnote', {
-          text: Game.GROUPS[seg.group].title + '：' + Game.GROUPS[seg.group].blurb
-            + '　答应这件，' + sibs.map((q) => '《' + Game.QUESTS[q].title + '》').join('、') + '这个月就来不及了。',
+          text: '〔' + Game.GROUPS[seg.group].title + '〕' + Game.GROUPS[seg.group].blurb
+            + '　答应这件，' + sibs.map((q) => '《' + Game.QUESTS[q].title + '》').join('、')
+            + '这个月就做不了了——主线会按你答应的这件往下走。',
         }));
       }
     }
@@ -509,6 +516,9 @@
           SP.ui.toast('你把这个月的时间给了这边——' + names + '那边，只能等下次了', 4800);
         }
       }
+      // 接完立刻告诉玩家第一步去哪——别让人拿着委托发愣
+      const step0 = Game.currentStep(seg.qid);
+      if (step0) setTimeout(() => SP.ui.toast('下一步：' + step0.desc, 4600), 1400);
       seg.kind = 'chat';
       seg.lines = seg.acceptLines || [];
       Roam.convo.li = 0;
@@ -664,7 +674,7 @@
       h('div.map-svg-wrap', { html: mapSVG() }),
       h('div.map-legend', {},
         h('span', { html: '<i class="lg lg-cur"></i>你在这里' }),
-        h('span', { html: '<i class="lg lg-q"></i>有委托' }),
+        h('span', { html: '<i class="lg lg-q"></i>有委托或有人找你' }),
         h('span', { html: '<i class="lg lg-star"></i>主线目标' }),
         h('span', { html: '<i class="lg lg-egg"></i>还有没捡到的小东西' }),
         h('span', { html: '<i class="lg lg-lock"></i>还没开放' })
@@ -749,10 +759,15 @@
     const offers = wid ? Object.keys(Game.QUESTS).filter((qid) =>
       Game.QUESTS[qid].window === wid && Game.questState(qid) === 'offer') : [];
 
+    const left = wid ? undecidedGroups(wid) : [];
     const main = Roam.active
       ? h('div.j-main', {},
         h('div.eyebrow', { text: '主线' }),
-        h('p', { text: Game.WINDOWS[wid].hint + '（地图上标 ★ 的地方）' }))
+        h('p', { text: Game.WINDOWS[wid].hint + '（地图上标 ★ 的地方）' }),
+        left.length
+          ? h('p', { class: 'j-sub', text: '还没定的事 ' + left.length + ' 件：' + left.map((g) => Game.GROUPS[g].title).join('、')
+              + '。去找地图上亮名字的人，答应谁，就定了哪件。' })
+          : null)
       : h('div.j-main', {},
         h('div.eyebrow', { text: '主线' }),
         h('p', { text: '故事进行中——到章节之间的自由活动时间，再来翻这一页。' }));
@@ -760,7 +775,7 @@
     const offerList = offers.length
       ? h('div.j-section', {},
         h('h2', { text: '听说的事 ' + offers.length }),
-        h('p.j-sub', { text: '有人也许想找你帮忙。这个月只够做其中几件——做哪件，故事就往哪边走。' }),
+        h('p.j-sub', { text: '这些人有事想找你。带〔 〕的是同一件事的两三种做法，互斥：答应一件，其余这个月就来不及了——主线会记住你选了哪件。' }),
         ...offers.map((qid) => {
           const Q = Game.QUESTS[qid];
           return h('div.j-rumor', { class: Q.group ? 'grouped' : null },
