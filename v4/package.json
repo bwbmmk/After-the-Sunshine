@@ -1,0 +1,14 @@
+{
+  "name": "after-the-sunshine-checks",
+  "private": true,
+  "version": "1.0.1",
+  "scripts": {
+    "test": "node tools/build.mjs --min --out 留一盏灯·漫游版.html --quiet && node tools/test-regressions.cjs"
+  },
+  "devDependencies": {
+    "jsdom": "30.1.0"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

@@ -47,8 +47,8 @@ const C = process.stdout.isTTY
 const APP = {
   pkg: 'com.afterrain.lamp',
   label: '留一盏灯',
-  versionName: '1.0.0',
-  versionCode: 1,
+  versionName: '1.0.1',
+  versionCode: 2,
   minSdk: 21,
   targetSdk: 34,
 };

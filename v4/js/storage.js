@@ -79,7 +79,7 @@
   }
 
   function writeSlot(id, payload) {
-    const s = Object.assign({}, payload, { at: Date.now() });
+    const s = JSON.parse(JSON.stringify(Object.assign({}, payload, { at: Date.now() })));
     slots[id] = s;
     Store.set(K.slots, slots);
     return s;
@@ -88,7 +88,7 @@
   function readSlot(id) {
     const s = slots[id];
     if (!s || !s.state) return null;
-    return s;
+    return JSON.parse(JSON.stringify(s));
   }
 
   function removeSlot(id) {

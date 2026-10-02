@@ -1,7 +1,7 @@
 <!doctype html>
 <!--
   晴天以后 · After the Sunshine — v2 单文件版
-  构建时间 2026-10-01 18:14 · 源目录 ./
+  构建时间 2026-10-02 08:53 · 源目录 ./
   本文件完全自包含：全部画面（程序化 SVG）、音乐与环境音（WebAudio 实时合成）、
   剧情、自由行动与存档逻辑均已内联，无任何外部资源、无网络请求。
   校验：剧情图 138 节点 / 6 结局全部可达 · 13 个 JS 模块通过 node --check
@@ -2877,7 +2877,7 @@ allEdges:(samples)=>{
   }
 
   function writeSlot(id, payload) {
-    const s = Object.assign({}, payload, { at: Date.now() });
+    const s = JSON.parse(JSON.stringify(Object.assign({}, payload, { at: Date.now() })));
     slots[id] = s;
     Store.set(K.slots, slots);
     return s;
@@ -2886,7 +2886,7 @@ allEdges:(samples)=>{
   function readSlot(id) {
     const s = slots[id];
     if (!s || !s.state) return null;
-    return s;
+    return JSON.parse(JSON.stringify(s));
   }
 
   function removeSlot(id) {
@@ -4422,19 +4422,25 @@ allEdges:(samples)=>{
     return !!Game.windowOf(nodeId);
   }
 
-  function enter(nextId) {
+  function enter(nextId, restoring = false) {
     if (Roam.active) return;
     const gateId = SP.engine.state.id;
     const wid = Game.windowOf(gateId);
     if (!wid) return;
+    Roam.leaveOK = false;
     Roam.active = true;
     Roam.windowId = wid;
     Roam.pendingNext = nextId;
 
     const w = Game.unlockWindow(wid);
     const node = SP.story.NODES[gateId] || {};
-    if (Game.LOCS[node.scene]) Game.onReach(node.scene);
+    if (!restoring && Game.LOCS[node.scene]) Game.onReach(node.scene);
 
+    if (restoring) {
+      SP.engine.stopTyping();
+      SP.stage.setScene(w.loc, { time: SP.engine.lastTime || 'afternoon', weather: SP.engine.lastWeather || 'fair', transition: 'fade' });
+      SP.audio.setScene(w.loc, SP.engine.lastWeather || 'fair');
+    }
     SP.engine.stopAuto();
     SP.engine.auto = false;
     SP.engine.skip = false;
@@ -4455,7 +4461,7 @@ allEdges:(samples)=>{
       const left = undecidedGroups(wid);
       const msg = left.length
         ? '这个月有 ' + left.length + ' 件事要定：' + left.map((g) => Game.GROUPS[g].title).join('、')
-          + '。去地图上亮着名字的地方找人聊——答应谁，就是定了哪件。'
+          + '。去地图上亮着名字的地方找人聊——答应后记得完成并交差，故事才会记住这件事。'
         : '亮着名字的人都可以聊聊。';
       setTimeout(() => SP.ui.toast(msg, 6400), 1700);
     } else {
@@ -4486,7 +4492,7 @@ allEdges:(samples)=>{
     const w = Game.ensure();
     return Object.keys(Game.GROUPS).filter((g) => {
       if (Game.GROUPS[g].window !== wid) return false;
-      return !Object.keys(Game.QUESTS).some((q) => Game.QUESTS[q].group === g && w.quests[q]);
+      return !Object.keys(Game.QUESTS).some((q) => Game.QUESTS[q].group === g && w.quests[q] && w.quests[q].done);
     });
   }
 
@@ -4515,8 +4521,8 @@ allEdges:(samples)=>{
     const names = groups.map((g) => Game.GROUPS[g].title);
     const panel = SP.ui.openPanel(h('div', {},
       SP.ui.head('先走也行', '漫游 · ' + Game.WINDOWS[Roam.windowId].title.replace(' · 自由活动', '')),
-      h('p', { text: '这个月还有 ' + groups.length + ' 件事没有定下来：' + names.join('、') + '。' }),
-      h('p', { text: '定下来的会写进故事里；没定的，故事就按「你没有去做」往下走。错过的那些委托不会消失——但属于这个月的那一份，就留在那儿了。' }),
+      h('p', { text: '这个月还有 ' + groups.length + ' 件事尚未交差：' + names.join('、') + '。' }),
+      h('p', { text: '答应只是开始，完成并交差后才会影响接下来的主线。手上的委托会保留，但已经读过的情节不会追溯改写。' }),
       h('div', { class: 'panel-actions' },
         SP.ui.btn('我再想想', 'ghost', () => { SP.ui.closePanel(); }),
         SP.ui.btn('就这样，继续主线', 'primary', () => {
@@ -4766,6 +4772,7 @@ allEdges:(samples)=>{
     $('#rdNext').onclick = stepDialog;
     dlg.classList.remove('hidden');
     paintDialogLine();
+    SP.engine.saveAuto(); // 首次寒暄获得的熟悉度也要持久化
     renderScene(); // busy 标记可能变化（打过招呼了）
   }
 
@@ -4889,7 +4896,7 @@ allEdges:(samples)=>{
         box.append(h('p.rd-groupnote', {
           text: '〔' + Game.GROUPS[seg.group].title + '〕' + Game.GROUPS[seg.group].blurb
             + '　答应这件，' + sibs.map((q) => '《' + Game.QUESTS[q].title + '》').join('、')
-            + '这个月就做不了了——主线会按你答应的这件往下走。',
+            + '这个月就做不了了——完成并交差后，主线才会按这件事往下走。',
         }));
       }
     }
@@ -4926,8 +4933,10 @@ allEdges:(samples)=>{
     no.onclick = () => {
       SP.audio.sfx('hover');
       clear(box);
-      SP.ui.toast('这件事还留在那儿。不过这个月的时间不等人。', 3000);
-      closeRoamDialog();
+      SP.ui.toast('这件事先留着，听听还有什么事。', 2400);
+      const c = Roam.convo;
+      if (c && c.seg < c.queue.length - 1) { c.seg++; c.li = 0; paintDialogLine(); }
+      else closeRoamDialog();
     };
   }
 
@@ -5240,6 +5249,7 @@ allEdges:(samples)=>{
   /* ================================== 导出 ================================== */
 
   SP.roam = {
+    snapshot: () => Roam.active ? { next: Roam.pendingNext, windowId: Roam.windowId } : null,
     enter, hide, reset, shouldGate, continueMain,
     travel, openMap, openJournal,
     renderHUD, renderScene, updatePlaceChip, undecidedGroups,
@@ -6795,7 +6805,8 @@ allEdges:(samples)=>{
     const node = ST.NODES[Engine.state.id];
     const text = typeof node.text === 'function' ? node.text(Engine.state.flags) : node.text || '';
     SP.storage.writeSlot('auto', {
-      state: JSON.parse(JSON.stringify(Engine.state)),
+      state: Engine.state, // storage.writeSlot 在持久化边界统一复制快照
+      roam: SP.roam ? SP.roam.snapshot() : null,
       chapter: node.chapter || Engine.chapter,
       place: node.place,
       scene: node.scene || Engine.currentScene,
@@ -6813,7 +6824,8 @@ allEdges:(samples)=>{
     const node = ST.NODES[Engine.state.id];
     const text = typeof node.text === 'function' ? node.text(Engine.state.flags) : node.text || '';
     SP.storage.writeSlot(id, {
-      state: JSON.parse(JSON.stringify(Engine.state)),
+      state: Engine.state, // storage.writeSlot 在持久化边界统一复制快照
+      roam: SP.roam ? SP.roam.snapshot() : null,
       chapter: node.chapter || Engine.chapter,
       place: node.place,
       scene: node.scene || Engine.currentScene,
@@ -6832,6 +6844,9 @@ allEdges:(samples)=>{
     const slot = SP.storage.readSlot(id);
     if (!slot) return false;
     if (!slot.state || !ST.NODES[slot.state.id]) { SP.ui.toast('这份存档不属于《留一盏灯》。'); return false; }
+    const savedLoc = slot.state.world && slot.state.world.loc;
+    if (SP.roam) SP.roam.reset();
+    Engine.auto = false; Engine.skip = false;
     Engine.state = slot.state;
     Engine.state.bonds = Engine.state.bonds || { man: 0, yan: 0, family: 0, self: 0 };
     Engine.state.log = Engine.state.log || [];
@@ -6847,6 +6862,11 @@ allEdges:(samples)=>{
     }
     SP.ui.paintBonds();
     show(Engine.state.id, { instant: true, record: false });
+    if (slot.roam && SP.roam && SP.game.windowOf(Engine.state.id) === slot.roam.windowId && ST.NODES[slot.roam.next]) {
+      if (savedLoc && SP.game.LOCS[savedLoc]) Engine.state.world.loc = savedLoc;
+      SP.roam.enter(slot.roam.next, true);
+    }
+    SP.ui.syncModes();
     return true;
   }
 

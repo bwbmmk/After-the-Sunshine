@@ -73,7 +73,7 @@ async function ensureFreshGame() {
 /* ── 1. 搬运运行时 ───────────────────────────────────────────────── */
 log(`${C.b}电脑版打包${C.x}`);
 await ensureFreshGame();
-await rm(OUT, { recursive: true, force: true });
+// 增量覆盖应用文件；OUT 下的「存档与设置」属于玩家，不可删除。
 await mkdir(path.join(OUT, 'resources', 'app'), { recursive: true });
 
 const entries = await readdir(ELECTRON);

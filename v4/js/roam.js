@@ -28,19 +28,25 @@
     return !!Game.windowOf(nodeId);
   }
 
-  function enter(nextId) {
+  function enter(nextId, restoring = false) {
     if (Roam.active) return;
     const gateId = SP.engine.state.id;
     const wid = Game.windowOf(gateId);
     if (!wid) return;
+    Roam.leaveOK = false;
     Roam.active = true;
     Roam.windowId = wid;
     Roam.pendingNext = nextId;
 
     const w = Game.unlockWindow(wid);
     const node = SP.story.NODES[gateId] || {};
-    if (Game.LOCS[node.scene]) Game.onReach(node.scene);
+    if (!restoring && Game.LOCS[node.scene]) Game.onReach(node.scene);
 
+    if (restoring) {
+      SP.engine.stopTyping();
+      SP.stage.setScene(w.loc, { time: SP.engine.lastTime || 'afternoon', weather: SP.engine.lastWeather || 'fair', transition: 'fade' });
+      SP.audio.setScene(w.loc, SP.engine.lastWeather || 'fair');
+    }
     SP.engine.stopAuto();
     SP.engine.auto = false;
     SP.engine.skip = false;
@@ -61,7 +67,7 @@
       const left = undecidedGroups(wid);
       const msg = left.length
         ? '这个月有 ' + left.length + ' 件事要定：' + left.map((g) => Game.GROUPS[g].title).join('、')
-          + '。去地图上亮着名字的地方找人聊——答应谁，就是定了哪件。'
+          + '。去地图上亮着名字的地方找人聊——答应后记得完成并交差，故事才会记住这件事。'
         : '亮着名字的人都可以聊聊。';
       setTimeout(() => SP.ui.toast(msg, 6400), 1700);
     } else {
@@ -92,7 +98,7 @@
     const w = Game.ensure();
     return Object.keys(Game.GROUPS).filter((g) => {
       if (Game.GROUPS[g].window !== wid) return false;
-      return !Object.keys(Game.QUESTS).some((q) => Game.QUESTS[q].group === g && w.quests[q]);
+      return !Object.keys(Game.QUESTS).some((q) => Game.QUESTS[q].group === g && w.quests[q] && w.quests[q].done);
     });
   }
 
@@ -121,8 +127,8 @@
     const names = groups.map((g) => Game.GROUPS[g].title);
     const panel = SP.ui.openPanel(h('div', {},
       SP.ui.head('先走也行', '漫游 · ' + Game.WINDOWS[Roam.windowId].title.replace(' · 自由活动', '')),
-      h('p', { text: '这个月还有 ' + groups.length + ' 件事没有定下来：' + names.join('、') + '。' }),
-      h('p', { text: '定下来的会写进故事里；没定的，故事就按「你没有去做」往下走。错过的那些委托不会消失——但属于这个月的那一份，就留在那儿了。' }),
+      h('p', { text: '这个月还有 ' + groups.length + ' 件事尚未交差：' + names.join('、') + '。' }),
+      h('p', { text: '答应只是开始，完成并交差后才会影响接下来的主线。手上的委托会保留，但已经读过的情节不会追溯改写。' }),
       h('div', { class: 'panel-actions' },
         SP.ui.btn('我再想想', 'ghost', () => { SP.ui.closePanel(); }),
         SP.ui.btn('就这样，继续主线', 'primary', () => {
@@ -372,6 +378,7 @@
     $('#rdNext').onclick = stepDialog;
     dlg.classList.remove('hidden');
     paintDialogLine();
+    SP.engine.saveAuto(); // 首次寒暄获得的熟悉度也要持久化
     renderScene(); // busy 标记可能变化（打过招呼了）
   }
 
@@ -495,7 +502,7 @@
         box.append(h('p.rd-groupnote', {
           text: '〔' + Game.GROUPS[seg.group].title + '〕' + Game.GROUPS[seg.group].blurb
             + '　答应这件，' + sibs.map((q) => '《' + Game.QUESTS[q].title + '》').join('、')
-            + '这个月就做不了了——主线会按你答应的这件往下走。',
+            + '这个月就做不了了——完成并交差后，主线才会按这件事往下走。',
         }));
       }
     }
@@ -532,8 +539,10 @@
     no.onclick = () => {
       SP.audio.sfx('hover');
       clear(box);
-      SP.ui.toast('这件事还留在那儿。不过这个月的时间不等人。', 3000);
-      closeRoamDialog();
+      SP.ui.toast('这件事先留着，听听还有什么事。', 2400);
+      const c = Roam.convo;
+      if (c && c.seg < c.queue.length - 1) { c.seg++; c.li = 0; paintDialogLine(); }
+      else closeRoamDialog();
     };
   }
 
@@ -846,6 +855,7 @@
   /* ================================== 导出 ================================== */
 
   SP.roam = {
+    snapshot: () => Roam.active ? { next: Roam.pendingNext, windowId: Roam.windowId } : null,
     enter, hide, reset, shouldGate, continueMain,
     travel, openMap, openJournal,
     renderHUD, renderScene, updatePlaceChip, undecidedGroups,

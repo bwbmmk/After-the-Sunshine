@@ -534,7 +534,8 @@
     const node = ST.NODES[Engine.state.id];
     const text = typeof node.text === 'function' ? node.text(Engine.state.flags) : node.text || '';
     SP.storage.writeSlot('auto', {
-      state: JSON.parse(JSON.stringify(Engine.state)),
+      state: Engine.state, // storage.writeSlot 在持久化边界统一复制快照
+      roam: SP.roam ? SP.roam.snapshot() : null,
       chapter: node.chapter || Engine.chapter,
       place: node.place,
       scene: node.scene || Engine.currentScene,
@@ -552,7 +553,8 @@
     const node = ST.NODES[Engine.state.id];
     const text = typeof node.text === 'function' ? node.text(Engine.state.flags) : node.text || '';
     SP.storage.writeSlot(id, {
-      state: JSON.parse(JSON.stringify(Engine.state)),
+      state: Engine.state, // storage.writeSlot 在持久化边界统一复制快照
+      roam: SP.roam ? SP.roam.snapshot() : null,
       chapter: node.chapter || Engine.chapter,
       place: node.place,
       scene: node.scene || Engine.currentScene,
@@ -571,6 +573,9 @@
     const slot = SP.storage.readSlot(id);
     if (!slot) return false;
     if (!slot.state || !ST.NODES[slot.state.id]) { SP.ui.toast('这份存档不属于《留一盏灯》。'); return false; }
+    const savedLoc = slot.state.world && slot.state.world.loc;
+    if (SP.roam) SP.roam.reset();
+    Engine.auto = false; Engine.skip = false;
     Engine.state = slot.state;
     Engine.state.bonds = Engine.state.bonds || { man: 0, yan: 0, family: 0, self: 0 };
     Engine.state.log = Engine.state.log || [];
@@ -586,6 +591,11 @@
     }
     SP.ui.paintBonds();
     show(Engine.state.id, { instant: true, record: false });
+    if (slot.roam && SP.roam && SP.game.windowOf(Engine.state.id) === slot.roam.windowId && ST.NODES[slot.roam.next]) {
+      if (savedLoc && SP.game.LOCS[savedLoc]) Engine.state.world.loc = savedLoc;
+      SP.roam.enter(slot.roam.next, true);
+    }
+    SP.ui.syncModes();
     return true;
   }
 
