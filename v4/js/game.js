@@ -80,6 +80,7 @@
    * ------------------------------------------------------------------ */
   const NPCS = {
     man: {
+      friendLine: '聊天聊到这儿就够熟了。想再近一点，得一起做点什么。',
       name: '小满', windows: {
         w1: { loc: 'campus', x: 26, y: 38,
           greet: ['手推车还回去了，大叔说下一个借车的要等明年。', '四号楼在梧桐树后头，看见晾衣被就右拐。导航不认晾衣被，我认。'],
@@ -104,6 +105,7 @@
       },
     },
     cheng: {
+      friendLine: '话说到这儿就到这儿吧。再近，得靠一起做的事。',
       name: '程野', windows: {
         w1: { loc: 'dorm', x: 68, y: 36,
           greet: ['椅子修好了，四条腿一般高。差的那四颗螺丝，五金店说下周到货。', '网要是再转圈，把路由器电源拔了，数到十再插上。数不到十不算。'],
@@ -128,6 +130,7 @@
       },
     },
     yan: {
+      friendLine: '言语上的熟悉是有上限的。一起做完一件事，才算真的熟。',
       name: '阿言', windows: {
         w2: { loc: 'library', x: 30, y: 38,
           greet: ['转接线借出三根，收回两根。少的那根我记着，不急。', '借录音笔填这张表。用途那栏写具体点，“拍着玩”不算用途。'],
@@ -144,6 +147,7 @@
       },
     },
     aunt: {
+      friendLine: '唠到这儿够啦！想跟我更熟，就常来食堂吃饭。',
       name: '陈姨', windows: {
         w1: { loc: 'canteen', x: 30, y: 40,
           greet: ['新来的吧！站那儿干啥，粥免费，先喝一碗！', '窗边第三张桌子腿稳，我上礼拜刚垫过。就坐那儿，听姨的。'],
@@ -168,6 +172,7 @@
       },
     },
     teacher: {
+      friendLine: '聊得再多，不如做成一件事。',
       name: '周老师', windows: {
         w2: { loc: 'classroom', x: 34, y: 36,
           greet: ['先别急着问器材。先说说，你们这个片子，拍给谁看？', '想不清楚没关系。最怕的是没想过。'],
@@ -188,7 +193,7 @@
       },
     },
     mom: {
-      name: '妈妈', phone: true, windows: {
+      name: '妈妈', phone: true, freeChat: true, windows: {
         w1: { loc: 'dorm', x: 50, y: 34,
           greet: ['到学校了吧？吃饭了没？', '妈妈就是想听听你的声。……行了，去忙你的，忙完再打过来也行。'],
           again: { 0: ['行李收拾好了没？被子够不够厚？……妈妈就是问问。'],
@@ -243,6 +248,7 @@
       unlocked: WINDOWS.w1.unlocks.slice(),
       visited: ['campus'],
       talked: {},      // npc -> 最近打过招呼的窗口
+      chatR: {},       // npc -> 已经靠「聊天」拿到过几点（聊天上限 3 点）
       rapport: {},     // npc -> 0..5
       quests: {},      // qid -> { stage, done? }
       notes: [],       // 手记 qid 列表
@@ -469,15 +475,32 @@
 
   /* ------------------------------ 事件 ------------------------------ */
 
+  /** 聊天最多贡献 3 点：再往上只能靠一起办事（委托 / 经手） */
+  const RAPPORT_CHAT_CAP = 3;
+
   function onTalk(npcId, wid) {
     const w = ensure();
     const first = w.talked[npcId] !== wid;
     if (first) {
       w.talked[npcId] = wid;
-      addRapport(npcId, 1);
+      const npc = NPCS[npcId] || {};
+      if (!w.chatR) w.chatR = {};
+      const used = w.chatR[npcId] || 0;
+      if (npc.freeChat || used < RAPPORT_CHAT_CAP) {
+        w.chatR[npcId] = used + 1;
+        addRapport(npcId, 1);
+      }
     }
     checkAchievements(w);
     return first;
+  }
+
+  /** 这个人的好感已经不能再靠聊天往上走了 */
+  function chatCapped(npcId) {
+    const npc = NPCS[npcId] || {};
+    if (npc.freeChat) return false;
+    const w = ensure();
+    return (w.chatR && (w.chatR[npcId] || 0) >= RAPPORT_CHAT_CAP);
   }
 
   /** 接下委托：同组的其余几件就此作罢 */
@@ -720,6 +743,6 @@
     onTalk, accept, advance, complete, onReach, onObserve, unlockWindow,
     settleStep, derivedFlags, flagSamples, takeKeepsake, keepsakeFor,
     itemDef, ownedItems, hasItem, itemsOfKind, deliveredCount,
-    notebookExtras, pocketSections, track, checkAchievements, addRapport,
+    notebookExtras, pocketSections, track, checkAchievements, addRapport, chatCapped,
   };
 })(window);

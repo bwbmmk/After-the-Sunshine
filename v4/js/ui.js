@@ -244,14 +244,43 @@
    * 分三层 —— 手上的事（还要交出去）、留念（熟到底才有）、角落里的小东西；
    * 纸片仍然收在最下面，和从前一样。 */
   function pocketItemCard(it) {
-    return h('article.pocket-item', { class: 'k-' + it.kind },
+    return h('article.pocket-item', {
+      class: 'k-' + it.kind,
+      title: '点一下看清楚',
+      onclick: () => openItemViewer(it.id),
+    },
       h('span.pi-icon', { text: it.icon || '▫' }),
       h('div.pi-body', {},
         h('b', { text: it.name }),
         it.from ? h('span.pi-from', { text: '来自 ' + it.from }) : null,
         h('p.pi-desc', { text: it.desc })
-      )
+      ),
+      h('span.pi-more', { text: '检视' })
     );
+  }
+
+  /** 物品检视：留念物配人物 CG，其余放大看说明 */
+  function openItemViewer(id) {
+    const Q = SP.quests;
+    const def = Q && Q.ITEMS ? Q.ITEMS[id] : null;
+    if (!def) return;
+    const npcId = Object.keys(Q.KEEPSAKES || {}).find((k) => Q.KEEPSAKES[k].item === id);
+    const cg = npcId && SP.cg ? SP.cg[npcId] : null;
+    const kindText = { quest: '任务道具', egg: '校园小物', keepsake: '留念物' }[def.kind] || '口袋里的东西';
+    const card = h('div.item-view', {},
+      cg
+        ? h('figure.iv-art', {}, h('img', { src: cg, alt: def.name }))
+        : h('div.iv-glyph', { text: def.icon || '▫' }),
+      h('div.eyebrow', { text: kindText + (def.from ? ' · 来自' + def.from : '') }),
+      h('h1.iv-name', { text: def.name }),
+      h('p.iv-desc', { text: def.desc }),
+      npcId
+        ? h('p.iv-note', { text: '这是' + (SP.game.NPCS[npcId] || {}).name + '给你的。' })
+        : h('p.iv-note', { text: def.kind === 'egg' ? '校园里不起眼的一样东西，捡起来就留着了。' : '交差之后落进口袋的东西。' })
+    );
+    const panel = openPanel(card, { mode: 'item-view' });
+    panel.classList.add('iv');
+    panel.append(h('div.panel-foot', {}, btn('放回口袋', 'primary', closePanel)));
   }
 
   function openNotebook() {
@@ -872,6 +901,11 @@
     const card = h(
       'div',
       {},
+      SP.cg && SP.cg.ending
+        ? h('figure.ending-art', {},
+            h('img', { src: SP.cg.ending, alt: '散场后的礼堂，最后一排的灯还亮着' }),
+            h('figcaption', { text: '放完以后 · 礼堂' }))
+        : null,
       h('div.eyebrow', { text: fresh ? '新的结局 · 已记入图鉴' : '你的故事 · 尾声' }),
       h('h1.ending-title', { text: e.title }),
       h('p.ending-body', { text: e.body }),
@@ -887,6 +921,7 @@
     );
 
     const panel = openPanel(card, { mode: 'ending' });
+    panel.classList.add('ending');
     panel.append(
       h(
         'div.panel-foot',

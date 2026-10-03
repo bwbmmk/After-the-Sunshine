@@ -360,9 +360,13 @@
         acceptLines: Game.QUEST_LINES[qid].accept, group: QD.group || null,
       });
     }
+    // 聊天好感已经拿满 3 点的人，见面会先说清楚「想再近一点得一起办事」
+    const capped = first && Game.chatCapped(npcId) ? (Game.NPCS[npcId] || {}).friendLine : null;
     if (!q.length) {
-      const lines = (first && spot.greet) ? spot.greet : Game.npcAgain(npcId, wid);
+      const lines = capped ? [capped] : ((first && spot.greet) ? spot.greet : Game.npcAgain(npcId, wid));
       q.push({ kind: 'chat', lines: lines.length ? lines : (spot.greet || []) });
+    } else if (capped) {
+      q.unshift({ kind: 'chat', lines: [capped] });
     } else if (first && spot.greet) {
       q.unshift({ kind: 'chat', lines: [spot.greet[0]] });
     }
