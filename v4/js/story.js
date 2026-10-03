@@ -58,6 +58,8 @@ const flatOf=(segs)=>segs.map((x)=>x.s).join('');
 
 function chapter(i){chapterIndex=i;context={chapter:CHAPTERS[i].name,scene:CHAPTERS[i].scene,place:'',time:CHAPTERS[i].time,weather:CHAPTERS[i].weather,mood:['warm','calm','melancholy','night','tender'][i]};}
 function at(scene,place,time='afternoon',weather='fair'){Object.assign(context,{scene,place,time,weather});}
+/* 结局三岔的出口：妈妈那段（如果出现）结束后，也要回到同一个分岔 */
+function ENDING_BY_RELEASE(f){return f&&f.release==='local'?'local0':(f&&f.release==='next'?'next0':'public0');}
 function beat(id,who,text,next,extra={}){
   const isFn=typeof text==='function';
   const seg=isFn?(f)=>toSegs(text(f),who):toSegs(text,who);
@@ -323,7 +325,12 @@ beat('future_pick','me', f=>f.release==='local'
   :f.release==='public'
   ?[N('这一次没有倒计时在催。'),I('小满把能发出去的版本早就备好了。'),I('那就让它去见更多的人。')]
   :[N('这一次没有倒计时在催。'),I('公开会有新的观众。'),I('也会失去对观看场合的把握——谁在什么情况下点开它，我们不会知道。'),I('留在这里不算失败。但它会慢慢被忘掉。'),N('放映前一晚我答应过的那件事，现在就是答案。')],
- f=> f.release==='local' ? 'local0' : (f.release==='next' ? 'next0' : 'public0'));
+ f=> (f.mom_near && !f.mom_has) ? 'c5_mom_call' : ENDING_BY_RELEASE(f));
+/* 一月的额外剧情：前面攒到 4 星，散场时妈妈会打来这通电话。
+ * 走完就把那张蒸蛋配方给你——这样即使一月漫游那通电话没接上，也还有一次机会。 */
+beat('c5_mom_call','me', [N('散场的时候，口袋里的手机震了一下。'),N('是妈妈。'),D('喂？'),D('我看完了。'),D('你说的那个……给晚到的人留位置，是真的？'),N('她在那头停了两秒。'),D('是真的。'),D('那妈就放心了。')],'c5_mom_give',{expr:'calm'});
+beat('c5_mom_give','me', [N('她说完又停了一会儿，像在等什么。'),D('等你把东西收好。'),D('蒸蛋我今天试了。水放多了，蒸出来是甜的。'),D('比例我记下来了。'),N('屏幕上是一张截图：水温、比例、盖不盖盘子，六行。'),D('你收着。'),D('下学期回来，妈给你做。')],'c5_mom_end',{expr:'smile'});
+beat('c5_mom_end','me', [N('挂了电话，我站在礼堂门口没动。'),I('她没问片子拍得怎么样，也没问我挂不挂科。'),I('她只问了留位置那件事。'),I('原来她一直在看。'),N('最后一行灯熄了。我把手机放回口袋，往楼下走。')], f=>ENDING_BY_RELEASE(f),{expr:'calm',grant:'mom'});
 at('cafe','第二天 · 咖啡馆','afternoon','fair');
 beat('public0','n', [N('我们在咖啡馆重写发布说明，附上每个参与者认可的那段文字。'),N('程野把“坚持梦想”四个字删了。'),D('我今天的梦想顶多是睡个午觉。')],'public1');
 beat('public1','n', f=>f.focus==='place'?[N('公开版从一盏灯开始。标题是《学校的侧门》。'),N('留言里有人说，认出了那同一块翘起来的地砖。'),D('我也在那儿绊过一下。'),I('这条留言我们谁都没有回复。'),I('但它被截图存下来了。')]:[N('公开版把每个人认可的名字放到了前面。'),N('陈姨发来一张截图。'),N('她外甥在评论里叫了一声“姨”。'),N('她回了一个大拇指。'),I('就一个大拇指，没有别的话。')],'public2');

@@ -412,6 +412,16 @@
         SP.audio.voice(node.person || null, { text });
       }
       if (node.sfx && !Engine.skip) SP.audio.sfx(node.sfx);
+      // 主线里把留念物交给玩家（例如一月妈妈那通电话）：读完这几句话再给
+      if (node.grant && SP.game && SP.game.takeKeepsake) {
+        const who = node.grant;
+        setTimeout(() => {
+          const got = SP.game.takeKeepsake(who);
+          if (!got) return;
+          SP.ui.toast('拿到了「' + got.def.name + '」');
+          if (SP.roam && SP.roam.openCg) SP.roam.openCg({ npc: who, item: got.item, kicker: '留念 · ' + (SP.game.NPCS[who] || {}).name });
+        }, opt.instant ? 60 : 2200);
+      }
 
       if (opt.record !== false) {
         Engine.state.log.push({

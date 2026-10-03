@@ -43,6 +43,10 @@ for (const qid in win.SP.quests.QUESTS) {
   if (!f) continue;
   for (const k in f) (FLAG_DOMAIN[k] || (FLAG_DOMAIN[k] = new Set())).add(f[k]);
 }
+// 世界推导旗标（不在任何 setFlags 里，但剧情会读）：也得进取值空间，
+// 否则妈妈那通一月电话会被判成孤儿节点。改动这类旗标时记得同步这里。
+FLAG_DOMAIN.mom_near = FLAG_DOMAIN.mom_near || new Set([0, 1]);
+FLAG_DOMAIN.mom_has = FLAG_DOMAIN.mom_has || new Set([0, 1]);
 const FLAG_KEYS = Object.keys(FLAG_DOMAIN);
 const FLAG_SAMPLES = [{}];
 for (const k of FLAG_KEYS) {

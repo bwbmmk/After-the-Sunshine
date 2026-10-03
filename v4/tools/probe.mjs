@@ -247,6 +247,14 @@ const probe = `<script id="__probe">
           });
           o.branchBad = bad.slice(0, 4);
           o.branchOK = samples.length > 0 && bad.length === 0;
+
+          // 一月妈妈那通电话：四星且还没给过 → 出现；给过或不到四星 → 走原分岔
+          var fp = SP.story.NODES.future_pick;
+          o.momCallWhenNear = typeof fp.next === 'function' ? fp.next({ release: 'public', mom_near: 1, mom_has: 0 }) : null;
+          o.momCallWhenHad = typeof fp.next === 'function' ? fp.next({ release: 'public', mom_near: 1, mom_has: 1 }) : null;
+          o.momCallWhenLow = typeof fp.next === 'function' ? fp.next({ release: 'public' }) : null;
+          o.momSceneExists = !!SP.story.NODES.c5_mom_call && !!SP.story.NODES.c5_mom_end;
+          o.momSceneGrants = !!(SP.story.NODES.c5_mom_end && SP.story.NODES.c5_mom_end.grant === 'mom');
         } catch (e) { o.skipError = String(e && e.message); }
 
         // 快进 B：纯对话节点 + 前方内容已读 → 应当正常开启
@@ -346,13 +354,17 @@ const checks = [];
 const check = (name, pass, detail) => checks.push({ name, pass: !!pass, detail });
 
 check('SP 命名空间已建立', rep.ok, `${(rep.modules || []).length} 个导出`);
-// 《留一盏灯》剧本：138 节点 / 6 结局 / 5 章；成就 8 个剧情 + 9 个漫游（game.js 运行时并入）
-check('剧情节点数 = 138', rep.nodeCount === 138, String(rep.nodeCount));
+// 《留一盏灯》剧本：141 节点 / 6 结局 / 5 章；成就 8 个剧情 + 9 个漫游（game.js 运行时并入）
+check('剧情节点数 = 141', rep.nodeCount === 141, String(rep.nodeCount));
 check('结局数 = 6', rep.endingCount === 6, String(rep.endingCount));
 check('成就数 = 17（剧情 8 + 漫游 9）', rep.achCount === 17, `${rep.achCount}（漫游 ${rep.gameAchCount}）`);
 check('章节数 = 5', rep.chapters === 5, String(rep.chapters));
 check('主线已无「当场选项」节点', rep.nodesWithChoices === 0, `${rep.nodesWithChoices} 个`);
-check('分岔节点 = 14（读世界 flag）', rep.branchNodes === 14, `${rep.branchNodes} 个 · 摊开后出边 ${rep.branchEdges} 条`);
+check('分岔节点 = 15（读世界 flag）', rep.branchNodes === 15, `${rep.branchNodes} 个 · 摊开后出边 ${rep.branchEdges} 条`);
+check('一月妈妈电话：四星未给时才出现',
+  rep.momCallWhenNear === 'c5_mom_call' && rep.momCallWhenHad === 'public0'
+  && rep.momCallWhenLow === 'public0' && rep.momSceneExists && rep.momSceneGrants,
+  `近=${rep.momCallWhenNear} 已给=${rep.momCallWhenHad} 未到四星=${rep.momCallWhenLow} 结尾发物=${rep.momSceneGrants}`);
 check('委托 29 / 互斥组 10 / 物品 31 / 留念 6',
   rep.questCount === 29 && rep.groupCount === 10 && rep.itemCount === 31 && rep.keepCount === 6,
   `委托 ${rep.questCount} · 组 ${rep.groupCount} · 物品 ${rep.itemCount} · 留念 ${rep.keepCount}`);

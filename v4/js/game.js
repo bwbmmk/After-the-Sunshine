@@ -475,8 +475,8 @@
 
   /* ------------------------------ 事件 ------------------------------ */
 
-  /** 聊天最多贡献 3 点：再往上只能靠一起办事（委托 / 经手） */
-  const RAPPORT_CHAT_CAP = 3;
+  /** 聊天最多贡献 4 点：满心前至少要一起办成一件事（委托 / 经手） */
+  const RAPPORT_CHAT_CAP = 4;
 
   function onTalk(npcId, wid) {
     const w = ensure();
@@ -659,6 +659,10 @@
       if (!f) continue;
       for (const k in f) (dom[k] || (dom[k] = [])).push(f[k]);
     }
+    // 世界推导出来的旗标也要进取值空间，否则校验器/探针看不到那些分支
+    // （例如：一月妈妈那通电话的 mom_near / mom_has）
+    dom.mom_near = [0, 1];
+    dom.mom_has = [0, 1];
     let out = [{}];
     for (const k in dom) {
       const vals = [...new Set(dom[k])];
@@ -687,6 +691,10 @@
       if (f) for (const k in f) out[k] = f[k];
     }
     for (const k in (w.flags || {})) out[k] = w.flags[k];
+    // 妈妈的剧情钩子：一月主线里那通电话，只有前面攒到 4 星才会响
+    const mr = (w.rapport && w.rapport.mom) || 0;
+    out.mom_near = mr >= 4 ? 1 : 0;
+    out.mom_has = (w.keepsakes || []).indexOf('mom') >= 0 ? 1 : 0;
     return out;
   }
 
