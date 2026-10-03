@@ -421,6 +421,11 @@
     void el.offsetWidth;
     el.classList.add('pop');
     paintDialogFace();
+    // 留念物这一刻：整屏看一次 CG（同一段只弹一次，收起后对话接着走）
+    if (seg && seg.kind === 'keepsake' && !seg.cgShown) {
+      seg.cgShown = true;
+      openCg({ npc: seg.npc, item: seg.item, kicker: '留念 · ' + (Game.NPCS[seg.npc] || {}).name });
+    }
     const next = $('#rdNext');
     if (next) {
       next.style.display = '';
@@ -444,6 +449,73 @@
       face.classList.remove('cg');
       clear(face);
       face.append(h('span', { html: SP.character.build(c.npc, 'calm') }));
+    }
+  }
+
+  /* ============================== 全屏 CG ============================== */
+
+  let cgEl = null;
+
+  /** 这个人给你的留念物是哪一件（手账里点 CG 时用来配字幕） */
+  function keepsakeItemOf(npcId) {
+    const K = Game.KEEPSAKES && Game.KEEPSAKES[npcId];
+    return K ? K.item : null;
+  }
+
+  function motionOff() {
+    return document.documentElement.dataset.motion === 'off'
+      || !!(global.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  /**
+   * 整屏看一张 CG：暗场压住画面，缓慢推镜 + 一道扫光 + 字幕逐级浮现。
+   * 点任意处 / Esc / 空格 / 回车都能收回去——它只是「看」，不是关卡。
+   */
+  function openCg(cfg) {
+    if (!cfg || !SP.cg || !SP.cg[cfg.npc]) return false;
+    if (cgEl) closeCg(true);
+    const name = (Game.NPCS[cfg.npc] || {}).name || '';
+    const def = cfg.item ? Game.itemDef(cfg.item) : (keepsakeItemOf(cfg.npc) ? Game.itemDef(keepsakeItemOf(cfg.npc)) : null);
+    cgEl = h('div.cgstage', {
+      class: 'cgstage' + (motionOff() ? ' still' : ''),
+      role: 'dialog', 'aria-modal': 'true',
+      'aria-label': (name ? name + ' 的' : '') + '留念 CG',
+      onclick: () => closeCg(),
+    },
+      h('div.cg-art', {}, h('img.cg-img', { src: SP.cg[cfg.npc], alt: name })),
+      h('div.cg-glow'),
+      h('div.cg-sweep'),
+      h('div.cg-vig'),
+      h('div.cg-cap', {},
+        h('span.cg-kicker', { text: cfg.kicker || '留念' }),
+        h('span.cg-name', { text: name }),
+        def ? h('span.cg-item', { text: '「' + def.name + '」' }) : null,
+        h('span.cg-hint', { text: '点击任意处继续' })
+      )
+    );
+    document.body.append(cgEl);
+    document.addEventListener('keydown', cgKey, true);
+    SP.audio.sfx('cg');
+    return true;
+  }
+
+  function closeCg(immediate) {
+    if (!cgEl) return;
+    const el = cgEl;
+    cgEl = null;
+    document.removeEventListener('keydown', cgKey, true);
+    if (immediate) { el.remove(); return; }
+    el.classList.add('gone');
+    setTimeout(() => el.remove(), 460);
+  }
+
+  /** 看 CG 的时候，空格/回车先用来「收起」，别让它顺手翻了剧情 */
+  function cgKey(e) {
+    if (!cgEl) return;
+    if (e.key === 'Escape' || e.key === 'Esc' || e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      closeCg();
     }
   }
 
@@ -829,7 +901,10 @@
           const hasCg = w.keepsakes.includes(npcId) && SP.cg && SP.cg[npcId];
           return h('div.j-face', { class: full ? 'full' : null },
             hasCg
-              ? h('span.face.cg', {}, h('img', { src: SP.cg[npcId], alt: Game.NPCS[npcId].name }))
+              ? h('span.face.cg', {
+                  title: '看 ' + Game.NPCS[npcId].name + ' 的 CG',
+                  onclick: () => openCg({ npc: npcId, kicker: '人物 CG' }),
+                }, h('img', { src: SP.cg[npcId], alt: Game.NPCS[npcId].name }))
               : h('span.face', { html: SP.character.build(npcId, 'calm') }),
             h('b', { text: Game.NPCS[npcId].name }),
             h('span.dots', { text: '●'.repeat(r) + '○'.repeat(Game.RAPPORT_MAX - r) }),
@@ -873,8 +948,9 @@
     enter, hide, reset, shouldGate, continueMain,
     travel, openMap, openJournal,
     renderHUD, renderScene, updatePlaceChip, undecidedGroups,
-    // 给外壳（安卓返回键、桌面窗口）留的收口：先合对话，再收热点
-    closeDialogue: closeRoamDialog,
+    openCg, closeCg, cgOpen: () => !!cgEl,
+    // 给外壳（安卓返回键、桌面窗口）留的收口：先合 CG，再合对话，最后收热点
+    closeDialogue: () => { if (cgEl) { closeCg(); return; } closeRoamDialog(); },
     closeLook: hideLookCard,
     active: () => Roam.active,
     windowId: () => Roam.windowId,

@@ -153,6 +153,7 @@
     panel.append(content);
     ov.classList.remove('hidden');
     ov.dataset.mode = opts.mode || 'default';
+    SP.audio.sfx('panel', true);
     // 焦点交给面板本身（tabindex=-1），键盘用户按 Tab 进入控件，避免首个按钮被无意义高亮
     panel.setAttribute('tabindex', '-1');
     setTimeout(() => panel.focus({ preventScroll: true }), 40);
@@ -160,7 +161,9 @@
   }
 
   function closePanel() {
-    $('#overlay').classList.add('hidden');
+    const ov = $('#overlay');
+    if (!ov.classList.contains('hidden')) SP.audio.sfx('panel', false);
+    ov.classList.add('hidden');
     const panel = $('#panel');
     clear(panel);
     if (lastFocus && document.contains(lastFocus)) lastFocus.focus();
@@ -191,6 +194,7 @@
     const total = Object.keys(ST.ENDINGS).length;
     const slots = SS.listSlots();
     const hasSave = slots.some((s) => !s.empty);
+    SP.audio.setMood('cover');          // 封面上先有一段安静的前奏
     const panel = openPanel(
       h(
         'div',
@@ -853,6 +857,7 @@
     const e = ST.ENDINGS[key];
     const fresh = SS.unlockEnding(key);
     SP.engine.checkAchievements();
+    SP.audio.setMood('hope');           // 结局这一段用「有光」的那套和声
     SP.audio.sfx('ending');
     paintProgress(100);
     $('#dialogue').classList.add('hidden');

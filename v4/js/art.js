@@ -343,6 +343,8 @@
       grad('water-grad', [[0, 'var(--c-water)', 1], [1, 'var(--c-water2)', 1]]) +
       grad('wall-v', [[0, '#ffffff', 0.14], [0.6, '#ffffff', 0], [1, '#000000', 0.16]]) +
       rgrad('focus', [[0, 'var(--c-warm)', 0.35], [1, 'var(--c-warm)', 0]]) +
+      // 地平线那一条暖光：把天地接起来，画面才不像两块布贴在一起
+      grad('horizon-glow', [[0, 'var(--c-warm)', 0], [0.55, 'var(--c-warm)', 0.16], [1, 'var(--c-warm)', 0]]) +
       `</defs>`
     );
   }
@@ -356,6 +358,9 @@
         `<g class="haze" opacity="var(--glow-a)">` +
         `<ellipse cx="${W * 0.72}" cy="${H * 0.2}" rx="520" ry="240" fill="var(--c-warm)" opacity=".18"/>` +
         `<ellipse cx="${W * 0.22}" cy="${H * 0.3}" rx="420" ry="190" fill="var(--c-warm)" opacity=".1"/>` +
+        `<rect x="0" y="${HORIZON - 74}" width="${W}" height="140" fill="url(#horizon-glow)"/>` +
+        `<ellipse cx="${W * 0.13}" cy="${HORIZON - 26}" rx="640" ry="128" fill="var(--sky-mid)" opacity=".2"/>` +
+        `<ellipse cx="${W * 0.9}" cy="${HORIZON - 2}" rx="580" ry="116" fill="var(--sky-2)" opacity=".16"/>` +
         `</g>`
     );
   }

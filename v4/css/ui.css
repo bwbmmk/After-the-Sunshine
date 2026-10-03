@@ -861,3 +861,191 @@ kbd {
   .slot-thumb { width: 70px; height: 48px }
   .ach-pop { right: var(--sp-3); top: auto; bottom: 44% }
 }
+
+/* ======================================================================== *
+ * 精修层 · 视觉打磨
+ * 只做叠加：不动结构、不加新类名，全部走既有 --ui-* 变量，
+ * 所以夜读模式、CSS 压缩等价性与 reduced-motion 都不受影响。
+ * ======================================================================== */
+
+/* 面板：纸面层次 + 顶部一线高光 + 更深的投影 */
+.panel {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #fff 30%, var(--ui-panel)) 0%, var(--ui-panel) 18%);
+  border-color: color-mix(in srgb, #fff 70%, transparent);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.45) inset,
+    0 -46px 70px -46px rgba(18, 38, 42, 0.2) inset,
+    0 28px 74px -24px rgba(16, 34, 38, 0.44),
+    0 8px 22px -10px rgba(16, 34, 38, 0.26);
+}
+.panel h2 { display: flex; align-items: center; gap: 9px }
+.panel h2::before {
+  content: "";
+  width: 3px;
+  height: 0.92em;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--ui-accent), color-mix(in srgb, var(--ui-accent) 30%, transparent));
+}
+.eyebrow { display: flex; align-items: center; gap: 10px }
+.eyebrow::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--ui-accent) 42%, transparent), transparent);
+}
+.panel.cover .eyebrow::after { display: none }
+
+/* 按钮：层次、按压、焦点环 */
+.btn { position: relative; overflow: hidden }
+.btn.primary {
+  background: linear-gradient(180deg, color-mix(in srgb, #fff 20%, var(--ui-accent)), var(--ui-accent));
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.34) inset,
+    0 12px 24px -14px color-mix(in srgb, var(--ui-accent) 85%, transparent);
+}
+.btn.primary:hover { filter: brightness(1.05) }
+.btn:active { transform: translateY(0) scale(0.986) }
+.btn:focus-visible,
+button:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--ui-accent) 68%, transparent);
+  outline-offset: 2px;
+}
+
+/* 选项：hover 时长出左侧强调条 */
+.choice::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 16%;
+  bottom: 16%;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--ui-accent);
+  opacity: 0;
+  transform: scaleY(0.35);
+  transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+.choice:hover::after { opacity: 0.92; transform: scaleY(1) }
+.choice:hover { box-shadow: 0 18px 40px -18px rgba(16, 34, 38, 0.4), var(--sh-3) }
+
+/* 提示条：磨砂 + 左侧一点强调 */
+.toast {
+  position: relative;
+  padding-left: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ui-ink) 92%, transparent), color-mix(in srgb, var(--ui-ink) 82%, transparent));
+  backdrop-filter: blur(9px);
+  box-shadow: 0 14px 32px -14px rgba(0, 0, 0, 0.52), 0 1px 0 rgba(255, 255, 255, 0.12) inset;
+}
+/* 开着面板时，提示条挪到上方，别压住正在读的卡片 */
+body:has(.overlay:not(.hidden)) .toast-wrap { bottom: auto; top: 88px }
+body:has(.overlay:not(.hidden)) .toast { animation: toast-in-top 0.34s var(--ease-out) both }
+@keyframes toast-in-top { from { opacity: 0; transform: translateY(-12px) } }
+.toast::before {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  margin-top: -2.5px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ui-accent) 82%, #fff);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--ui-accent) 70%, transparent);
+}
+
+/* 成就弹窗：一道掠光 */
+.ach-pop .item { position: relative; overflow: hidden }
+.ach-pop .item::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.42) 50%, transparent 60%);
+  transform: translateX(-130%);
+  animation: ach-sheen 1.7s var(--ease) 0.25s 2;
+}
+@keyframes ach-sheen { to { transform: translateX(130%) } }
+
+/* 记录列表：整行 hover 时左侧一点强调 */
+.log-entry {
+  border-radius: 9px;
+  border-left: 2px solid transparent;
+  transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.log-entry:hover { border-left-color: var(--ui-accent) }
+
+/* 滚动条与选区 */
+::selection { background: color-mix(in srgb, var(--ui-accent) 30%, transparent) }
+.panel::-webkit-scrollbar,
+.panel-body::-webkit-scrollbar,
+.scroll::-webkit-scrollbar { width: 10px }
+.panel::-webkit-scrollbar-track,
+.scroll::-webkit-scrollbar-track { background: transparent }
+.panel::-webkit-scrollbar-thumb,
+.scroll::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 10px;
+  background-clip: content-box;
+  background-color: color-mix(in srgb, var(--ui-ink) 24%, transparent);
+}
+.panel::-webkit-scrollbar-thumb:hover,
+.scroll::-webkit-scrollbar-thumb:hover { background-color: color-mix(in srgb, var(--ui-ink) 38%, transparent) }
+
+/* 面板里的分段入场（只在允许动画时） */
+@media (prefers-reduced-motion: no-preference) {
+  .panel .j-section,
+  .panel .pocket-item {
+    animation: rise-in 0.5s var(--ease-out) both;
+  }
+  .panel .j-section:nth-of-type(2) { animation-delay: 0.05s }
+  .panel .j-section:nth-of-type(3) { animation-delay: 0.1s }
+  .panel .j-section:nth-of-type(4) { animation-delay: 0.15s }
+  @keyframes rise-in { from { opacity: 0; transform: translateY(10px) } }
+}
+
+/* ---------------------------- 封面：一点灯光 ---------------------------- */
+.panel.cover { position: relative; overflow: hidden }
+.panel.cover::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -16%;
+  width: 76%;
+  height: 54%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--c-lamp) 42%, transparent), transparent 74%);
+  filter: blur(18px);
+  opacity: 0.9;
+}
+.panel.cover > div { position: relative }
+.panel.cover h1 {
+  font-size: clamp(38px, 5.4vw, 60px);
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  margin: 0 0 var(--sp-2);
+}
+@supports (-webkit-background-clip: text) {
+  .panel.cover h1 {
+    background: linear-gradient(180deg, var(--ui-ink) 20%, color-mix(in srgb, var(--ui-ink) 58%, var(--ui-accent)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+.panel.cover h1::after {
+  content: "";
+  display: block;
+  width: 120px;
+  height: 3px;
+  margin: 22px auto 0;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ui-accent) 72%, transparent), transparent);
+}
+.panel.cover .lead { line-height: 2.15; letter-spacing: 0.05em; color: var(--ui-ink-2) }
+.panel.cover .btn.primary { padding: 13px 42px; font-size: 15px; letter-spacing: 0.16em }
+.panel.cover .fine { font-size: 11.5px; line-height: 2.05; letter-spacing: 0.03em }
+.panel.cover .stat b { font-family: var(--font-num); letter-spacing: 0.04em }

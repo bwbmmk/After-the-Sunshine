@@ -51,7 +51,11 @@
     Stage.world.prepend(Stage.clouds, Stage.celestial, Stage.stars, Stage.shoot);
 
     Stage.canvas = h('canvas.fx');
-    Stage.light = h('div.light', {}, h('div.rays'), h('div.wet'), h('div.vignette'), h('div.grain'));
+    // 光照组：光柱 → 太阳 bloom → 虚焦光斑 → 湿地反光 → 暗角 → 颗粒
+    Stage.bloom = h('div.sun-bloom');
+    Stage.bokeh = h('div.bokeh', {},
+      ...Array.from({ length: 8 }, (_, i) => h('i', { data: { i: i + 1 } })));
+    Stage.light = h('div.light', {}, h('div.rays'), Stage.bloom, Stage.bokeh, h('div.wet'), h('div.vignette'), h('div.grain'));
     Stage.el.append(Stage.world, Stage.canvas, Stage.light);
     root.prepend(Stage.el);
 
@@ -229,6 +233,29 @@
     }
   }
 
+  /** 常驻浮尘：慢慢往上浮的小光点。房间和户外都用得上，透明度压得很低 */
+  function drawMotes(dt) {
+    const ctx = Stage.ctx;
+    const W = Stage.w, H = Stage.hgt;
+    const n = Math.min(Stage.particles.length, 56);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < n; i++) {
+      const p = Stage.particles[i];
+      p.ph += dt * (0.24 + p.z * 0.4);
+      p.y -= (5 + p.z * 13) * dt;
+      p.x += Math.sin(p.ph) * 9 * dt;
+      if (p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
+      const r = 0.45 + p.z * 1.25;
+      const a = 0.035 + p.z * 0.075;
+      ctx.fillStyle = 'rgba(255, 246, 226, ' + a.toFixed(3) + ')';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
   function drawParticles(dt) {
     const ctx = Stage.ctx;
     if (!ctx) return;
@@ -237,6 +264,7 @@
     const rain = Stage.weatherMix;
     const snow = Stage.targetSnow;
 
+    drawMotes(dt);                                  // 常驻：一点点浮尘，画面才有空气
     if (rain < 0.02 && snow < 0.02) return;
 
     ctx.save();

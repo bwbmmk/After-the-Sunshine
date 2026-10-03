@@ -156,6 +156,21 @@ const norm = (s) => s.replace(/\s+/g, ' ').replace(/\s*,\s*/g, ',').trim();
 
 let totalDiff = 0;
 let blocksOk = 0;
+/* 选择器归一化：@ 规则里的条件（@supports / @media）压缩时会去掉冒号周围
+ * 的空格，那是合法的等价写法，不能算差异；普通选择器里的空格是有意义的
+ * （`.a :hover` 与 `.a:hover` 不是一回事），所以只对 @ 规则做这层归一。 */
+function normKey(k) {
+  return k.startsWith('@')
+    ? k.replace(/\s*:\s*/g, ':').replace(/\s+/g, ' ').trim()
+    : k.trim();
+}
+function pick(map, key) {
+  if (map[key]) return map[key];
+  const want = normKey(key);
+  for (const k in map) if (normKey(k) === want) return map[k];
+  return undefined;
+}
+
 for (let i = 0; i < A.length; i++) {
   const a = data.a[i], b = data.b[i];
   const label = `区块 #${i + 1}`;
@@ -167,7 +182,7 @@ for (let i = 0; i < A.length; i++) {
   const keys = new Set([...Object.keys(a.map), ...Object.keys(b.map)]
     .filter((k) => !k.startsWith('__')).sort());
   for (const k of keys) {
-    const av = a.map[k], bv = b.map[k];
+    const av = pick(a.map, k), bv = pick(b.map, k);
     if (!av) { diffs.push(`选择器缺失（仅原样版有）：${k}`); continue; }
     if (!bv) { diffs.push(`选择器缺失（仅压缩版有）：${k}`); continue; }
     const as = [...av].sort(), bs = [...bv].sort();

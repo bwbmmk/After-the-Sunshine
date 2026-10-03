@@ -44,6 +44,33 @@
       chords: [[0, 4, 7], [2, 5, 9], [-3, 2, 7], [-1, 4, 7]],
       arp: [0, 1, 2, 1, 2, 0, 1, 2], arpB: [1, 2, 1, 2, 0, 2, 1, 0], sparkle: 1.0, bass: 0.95,
     },
+    // 封面：更慢、更空，像还没开灯的房间
+    cover: {
+      root: 196.0, bpm: 52, wave: 'sine', lvl: 0.8, rev: 0.52,
+      chords: [[0, 4, 7], [-3, 2, 7], [-5, 0, 4], [-1, 2, 5]],
+      arp: [0, 2, 1, 2, 0, 1, 2, 1], arpB: [1, 2, 2, 0, 1, 2, 0, 2], sparkle: 0.5, bass: 1.0,
+    },
+  };
+
+  /* ---------------------- 每个场景一点点自己的音色 ----------------------
+   * 同一套和声，换个场景换一种音色和音区，耳朵能听出「换地方了」。
+   * semi: 相对主音偏移的半音；wave: 波形；gain: 长音音量；pan: 左右。
+   * ------------------------------------------------------------------ */
+  const SCENE_TONE = {
+    campus: { semi: 0, wave: 'triangle', gain: 1.0, pan: -0.15 },
+    avenue: { semi: 7, wave: 'sine', gain: 0.9, pan: 0.18 },
+    club: { semi: 5, wave: 'triangle', gain: 0.95, pan: 0.22 },
+    canteen: { semi: -5, wave: 'sawtooth', gain: 0.5, pan: -0.2 },
+    plaza: { semi: 2, wave: 'sine', gain: 0.95, pan: 0 },
+    classroom: { semi: -7, wave: 'triangle', gain: 0.85, pan: -0.12 },
+    lecture: { semi: -12, wave: 'sine', gain: 1.1, pan: 0 },
+    dorm: { semi: 4, wave: 'triangle', gain: 0.95, pan: 0.14 },
+    library: { semi: -4, wave: 'sine', gain: 0.9, pan: 0.1 },
+    lake: { semi: 9, wave: 'sine', gain: 0.95, pan: -0.22 },
+    cafe: { semi: 3, wave: 'triangle', gain: 0.8, pan: 0.2 },
+    roof: { semi: 12, wave: 'sine', gain: 0.85, pan: -0.1 },
+    track: { semi: 7, wave: 'triangle', gain: 0.9, pan: 0.16 },
+    hall: { semi: -12, wave: 'sine', gain: 1.15, pan: 0 },
   };
 
   /* ------------------------------- 环境音配置 ------------------------------ */
@@ -138,8 +165,8 @@
 
   /* ------------------------------ 基础发声 ------------------------------- */
 
-  /** 单个音符，带指数包络，可送入混响 */
-  function tone(freq, at, dur, vol, type = 'sine', revSend = 0, detune = 0) {
+  /** 单个音符，带指数包络，可送入混响；pan>0 偏右，<0 偏左 */
+  function tone(freq, at, dur, vol, type = 'sine', revSend = 0, detune = 0, pan = 0) {
     const ctx = Audio.ctx;
     const osc = ctx.createOscillator();
     const env = ctx.createGain();
@@ -150,11 +177,18 @@
     env.gain.exponentialRampToValueAtTime(Math.max(vol, 0.0002), at + 0.045);
     env.gain.exponentialRampToValueAtTime(0.0001, at + dur);
     osc.connect(env);
-    env.connect(Audio.bus.music);
+    let tail = env;
+    if (pan && ctx.createStereoPanner) {
+      const p = ctx.createStereoPanner();
+      p.pan.value = clamp(pan, -1, 1);
+      env.connect(p);
+      tail = p;
+    }
+    tail.connect(Audio.bus.music);
     if (revSend > 0) {
       const send = ctx.createGain();
       send.gain.value = revSend;
-      env.connect(send).connect(Audio.rev);
+      tail.connect(send).connect(Audio.rev);
     }
     osc.start(at);
     osc.stop(at + dur + 0.05);
@@ -192,22 +226,43 @@
     const semi = chord[degree % chord.length] + (degree >= chord.length ? 12 : 0);
     const freq = m.root * Math.pow(2, semi / 12);
     const lvl = m.lvl * (0.075 + (idx % 2 ? 0.012 : 0));
+    const wet = Audio._weather;
+    const rainy = wet === 'rain' || wet === 'drizzle' || wet === 'storm';
+    const snowy = wet === 'snow';
+    // 琶音在左右之间轻轻摆，画面有视差，声音也该有
+    const sway = ((idx % 4) - 1.5) / 1.5 * 0.3;
 
     // 主音
-    tone(freq, at, 0.9, lvl, m.wave, m.rev);
+    tone(freq, at, rainy ? 1.15 : 0.9, lvl * (rainy ? 0.9 : 1), m.wave, m.rev, 0, sway);
     // 低八度垫音
-    if (idx === 0 || idx === 4) tone(freq / 2, at, 2.0, lvl * 0.5 * m.bass, 'triangle', m.rev * 1.2);
+    if (idx === 0 || idx === 4) tone(freq / 2, at, 2.0, lvl * 0.5 * m.bass, 'triangle', m.rev * 1.2, 0, -sway * 0.6);
     // 铺底长音
     if (idx === 0) {
-      chord.forEach((c, i) => tone(m.root * Math.pow(2, (c - 12) / 12), at, 3.6, 0.022, 'sine', m.rev * 1.4, i * 4));
+      chord.forEach((c, i) => tone(m.root * Math.pow(2, (c - 12) / 12), at, 3.6, 0.022, 'sine', m.rev * 1.4, i * 4, (i - 1) * 0.3));
     }
-    // 高音点缀
+    // 场景长音：两小节一次，音色随地方换
+    const st = SCENE_TONE[Audio._scene];
+    if (st && idx === 0 && bar % 2 === 0) {
+      tone(freq * 2 * Math.pow(2, st.semi / 12) / 4, at, 5.6,
+        0.02 * st.gain * (rainy ? 1.25 : 1), st.wave, m.rev * 1.5, 0, st.pan);
+    }
+    // 雨夜多一层很低的气声，像窗户外面那片雨
+    if (rainy && idx === 2 && bar % 2 === 1) {
+      tone(m.root / 4, at, 4.2, 0.014, 'sine', m.rev * 1.3, 0, 0);
+    }
+    // 高音点缀（下雨天把亮点收一收，雪天反而更清）
     const r = rng(step * 7919 + (Audio._mood.charCodeAt(0) || 1));
-    if (r() < 0.36 * m.sparkle) {
-      tone(freq * 4, at + stepDur() * 0.5, 0.34, 0.012, 'sine', m.rev * 1.6);
+    const sparkMul = rainy ? 0.35 : (snowy ? 1.15 : 1);
+    if (r() < 0.36 * m.sparkle * sparkMul) {
+      tone(freq * 4, at + stepDur() * 0.5, snowy ? 0.5 : 0.34, 0.012, 'sine', m.rev * 1.6, 0, -sway);
     }
-    if (r() < 0.14 * m.sparkle) {
-      tone(freq * 6, at + stepDur() * 0.25, 0.26, 0.008, 'triangle', m.rev * 1.8);
+    if (r() < 0.14 * m.sparkle * sparkMul) {
+      tone(freq * 6, at + stepDur() * 0.25, 0.26, 0.008, 'triangle', m.rev * 1.8, 0, sway * 1.2);
+    }
+    // 乐句收尾：每四小节末尾来一个小上行，像一句话说完了
+    if (bar % 4 === 3 && idx === 6) {
+      [0, 2, 4].forEach((s, i) =>
+        tone(freq * Math.pow(2, s / 12) * 2, at + i * stepDur() * 0.5, 0.5, 0.01, 'sine', m.rev * 1.7, 0, sway));
     }
   }
 
@@ -227,51 +282,78 @@
 
   let ambNodes = null;
 
-  function killAmbience(fade = 0.6) {
-    if (!ambNodes) return;
-    const old = ambNodes;
-    ambNodes = null;
-    try {
-      old.gain.gain.cancelScheduledValues(now());
-      old.gain.gain.setTargetAtTime(0.0001, now(), fade / 3);
-      setTimeout(() => {
-        try { old.src.stop(); } catch {}
-        try { old.lfo.stop(); } catch {}
-      }, fade * 1200);
-    } catch {}
-  }
-
-  function startAmbience() {
-    if (!Audio.enabled || !Audio.ctx) return;
+  /** 一层环境噪声：噪声源 → 滤波 → 增益（可左右摆）→ amb 总线 */
+  function makeAmbLayer(cfg, target, pan) {
     const ctx = Audio.ctx;
-    killAmbience(0.8);
-    const a = AMB[Audio._scene] || AMB.campus;
-    const w = { clear: 0, fair: 0, overcast: 0.06, drizzle: 0.4, rain: 1, fog: 0.1, snow: 0.25 }[Audio._weather] || 0;
-
     const src = ctx.createBufferSource();
     src.buffer = noiseBuffer(3);
     src.loop = true;
     const filt = ctx.createBiquadFilter();
-    filt.type = w > 0.3 ? 'highpass' : a.type;
-    filt.frequency.value = w > 0.3 ? 900 : a.freq;
-    filt.Q.value = a.type === 'bandpass' ? 0.9 : 0.5;
+    filt.type = cfg.type;
+    filt.frequency.value = cfg.freq;
+    filt.Q.value = cfg.q == null ? (cfg.type === 'bandpass' ? 0.9 : 0.5) : cfg.q;
     const gain = ctx.createGain();
     gain.gain.value = 0.0001;
-    src.connect(filt).connect(gain).connect(Audio.bus.amb);
-
-    // 缓慢滤波摆动，让环境音“呼吸”
+    src.connect(filt).connect(gain);
+    let tail = gain;
+    if (ctx.createStereoPanner) {
+      const p = ctx.createStereoPanner();
+      p.pan.value = clamp(pan || 0, -1, 1);
+      gain.connect(p);
+      tail = p;
+    }
+    tail.connect(Audio.bus.amb);
     const lfo = ctx.createOscillator();
     const lfoGain = ctx.createGain();
-    lfo.frequency.value = a.lfo;
-    lfoGain.gain.value = a.freq * 0.28;
+    lfo.frequency.value = cfg.lfo || 0.08;
+    lfoGain.gain.value = cfg.freq * 0.22;
     lfo.connect(lfoGain).connect(filt.frequency);
-
     src.start();
     lfo.start();
-    const target = a.gain * (1 + w * 1.6);
     gain.gain.setTargetAtTime(target, now(), 0.9);
-    ambNodes = { src, gain, lfo };
-    Audio._ambBase = target;
+    return { src, gain, lfo };
+  }
+
+  function killAmbience(fade = 0.6) {
+    if (!ambNodes) return;
+    const old = ambNodes;
+    ambNodes = null;
+    for (const L of old.layers) {
+      try {
+        L.gain.gain.cancelScheduledValues(now());
+        L.gain.gain.setTargetAtTime(0.0001, now(), fade / 3);
+        setTimeout(() => {
+          try { L.src.stop(); } catch {}
+          try { L.lfo.stop(); } catch {}
+        }, fade * 1200);
+      } catch {}
+    }
+  }
+
+  function startAmbience() {
+    if (!Audio.enabled || !Audio.ctx) return;
+    killAmbience(0.8);
+    const a = AMB[Audio._scene] || AMB.campus;
+    const w = { clear: 0, fair: 0, overcast: 0.06, drizzle: 0.4, rain: 1, fog: 0.1, snow: 0.25 }[Audio._weather] || 0;
+
+    // 两层：主层是「这个地方的底噪」，副层低一个八度、反方向摆，空间立刻宽了
+    const main = {
+      type: w > 0.3 ? 'highpass' : a.type,
+      freq: w > 0.3 ? 900 : a.freq,
+      lfo: a.lfo,
+    };
+    const sub = {
+      type: a.type === 'bandpass' ? 'lowpass' : 'bandpass',
+      freq: Math.max(120, (w > 0.3 ? 420 : a.freq) * 0.34),
+      lfo: a.lfo * 0.57,
+    };
+    const base = a.gain * (1 + w * 1.6);
+    const layers = [
+      makeAmbLayer(main, base, -0.18),
+      makeAmbLayer(sub, base * 0.62, 0.22),
+    ];
+    ambNodes = { layers, base, subRatio: 0.62 };
+    Audio._ambBase = base;
   }
 
   /** 天气变化时平滑调整环境音 */
@@ -279,7 +361,10 @@
     if (!ambNodes) return;
     const a = AMB[Audio._scene] || AMB.campus;
     const w = { clear: 0, fair: 0, overcast: 0.06, drizzle: 0.4, rain: 1, fog: 0.1, snow: 0.25 }[Audio._weather] || 0;
-    ambNodes.gain.gain.setTargetAtTime(a.gain * (1 + w * 1.6), now(), 1.2);
+    const base = a.gain * (1 + w * 1.6);
+    const ratio = ambNodes.subRatio || 0.62;
+    ambNodes.layers[0].gain.gain.setTargetAtTime(base, now(), 1.2);
+    if (ambNodes.layers[1]) ambNodes.layers[1].gain.gain.setTargetAtTime(base * ratio, now(), 1.2);
   }
 
   /* -------------------------------- 音效 --------------------------------- */
@@ -368,6 +453,20 @@
         tone(329.63 * Math.pow(2, s / 12), at + i * 0.17, 1.1, 0.04, 'sine', 0.85));
       tone(164.81, at, 2.8, 0.035, 'triangle', 0.7);
     },
+    // 全屏 CG 揭晓：一层很轻的上行泛音，像画面里慢慢亮起来的那点光
+    cg() {
+      const at = now() + 0.001;
+      [0, 7, 12, 19, 24].forEach((s, i) =>
+        tone(261.63 * Math.pow(2, s / 12), at + i * 0.13, 1.7, 0.022, 'sine', 0.85));
+      tone(98, at, 2.6, 0.03, 'triangle', 0.6);
+    },
+    // 面板开合：比 click 厚一点的木头声
+    panel(open) {
+      const at = now() + 0.001;
+      const base = open ? 392 : 311.13;
+      tone(base, at, 0.26, 0.032, 'triangle', 0.45);
+      tone(base * 1.5, at + 0.05, 0.3, 0.018, 'sine', 0.5);
+    },
     ending() {
       const at = now() + 0.001;
       [0, 4, 7, 12].forEach((s, i) => tone(261.63 * Math.pow(2, s / 12), at + i * 0.16, 2.4, 0.05, 'sine', 0.8));
@@ -375,11 +474,11 @@
     },
   };
 
-  function sfx(name) {
+  function sfx(name, arg) {
     if (!Audio.ready || !Audio.enabled) return;
     try {
       if (Audio.ctx.state === 'suspended') Audio.ctx.resume();
-      (SFX[name] || SFX.click)();
+      (SFX[name] || SFX.click)(arg);
     } catch {}
   }
 

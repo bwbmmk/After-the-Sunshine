@@ -366,3 +366,53 @@
   .game { width: 100%; height: 100dvh; border-radius: 0 }
   .char { width: min(26vh, 220px); height: min(40vh, 340px); bottom: 24% }
 }
+
+/* ======================================================================== *
+ * 精修层 · 空气与光
+ * 三样都在 .light 里，跟既有光柱、暗角、颗粒叠着用：
+ *   .sun-bloom 太阳那一圈更大的光晕（慢慢呼吸）
+ *   .bokeh     虚焦的暖色光斑（慢慢浮）
+ * 浮尘画在 canvas 上（见 stage.js drawMotes），这里不重复。
+ * ======================================================================== */
+
+.sun-bloom {
+  opacity: calc(var(--glow-a) * 0.8);
+  background: radial-gradient(
+    30vmax 23vmax at var(--sun-x, 70%) var(--sun-y, 20%),
+    color-mix(in srgb, var(--c-warm) 58%, transparent) 0%,
+    color-mix(in srgb, var(--c-lamp) 20%, transparent) 42%,
+    transparent 78%
+  );
+  mix-blend-mode: screen;
+  filter: blur(7px);
+  animation: bloom-breathe 12s ease-in-out infinite alternate;
+}
+@keyframes bloom-breathe { from { transform: scale(1) } to { transform: scale(1.08) } }
+
+.bokeh {
+  opacity: calc(var(--glow-a) * 0.55);
+  mix-blend-mode: screen;
+  overflow: hidden;
+}
+.bokeh i {
+  position: absolute;
+  width: var(--d, 96px);
+  height: var(--d, 96px);
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--c-lamp) 62%, transparent) 0%, transparent 66%);
+  filter: blur(2px);
+  opacity: var(--o, 0.5);
+  animation: bokeh-float var(--dur, 26s) ease-in-out infinite alternate;
+}
+.bokeh i:nth-child(1) { left: 8%;  top: 10%; --d: 132px; --dur: 29s; --o: 0.5 }
+.bokeh i:nth-child(2) { left: 26%; top: 26%; --d: 74px;  --dur: 21s; --o: 0.34; animation-delay: -6s }
+.bokeh i:nth-child(3) { left: 44%; top: 6%;  --d: 104px; --dur: 34s; --o: 0.42; animation-delay: -13s }
+.bokeh i:nth-child(4) { left: 62%; top: 22%; --d: 58px;  --dur: 19s; --o: 0.3; animation-delay: -3s }
+.bokeh i:nth-child(5) { left: 78%; top: 12%; --d: 148px; --dur: 37s; --o: 0.46; animation-delay: -18s }
+.bokeh i:nth-child(6) { left: 88%; top: 34%; --d: 82px;  --dur: 24s; --o: 0.32; animation-delay: -9s }
+.bokeh i:nth-child(7) { left: 18%; top: 44%; --d: 64px;  --dur: 27s; --o: 0.26; animation-delay: -15s }
+.bokeh i:nth-child(8) { left: 54%; top: 40%; --d: 112px; --dur: 31s; --o: 0.28; animation-delay: -21s }
+@keyframes bokeh-float {
+  from { transform: translate3d(0, 0, 0) }
+  to { transform: translate3d(2.4vw, -5vh, 0) }
+}
