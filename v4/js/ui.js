@@ -153,6 +153,7 @@
     panel.append(content);
     ov.classList.remove('hidden');
     ov.dataset.mode = opts.mode || 'default';
+    document.body.classList.add('panel-open');
     SP.audio.sfx('panel', true);
     // 焦点交给面板本身（tabindex=-1），键盘用户按 Tab 进入控件，避免首个按钮被无意义高亮
     panel.setAttribute('tabindex', '-1');
@@ -164,6 +165,7 @@
     const ov = $('#overlay');
     if (!ov.classList.contains('hidden')) SP.audio.sfx('panel', false);
     ov.classList.add('hidden');
+    document.body.classList.remove('panel-open');
     const panel = $('#panel');
     clear(panel);
     if (lastFocus && document.contains(lastFocus)) lastFocus.focus();

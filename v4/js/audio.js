@@ -55,23 +55,186 @@
   /* ---------------------- 每个场景一点点自己的音色 ----------------------
    * 同一套和声，换个场景换一种音色和音区，耳朵能听出「换地方了」。
    * semi: 相对主音偏移的半音；wave: 波形；gain: 长音音量；pan: 左右。
+   * motif: 这个地方的「主题动机」——每隔几小节冒个头。
    * ------------------------------------------------------------------ */
   const SCENE_TONE = {
-    campus: { semi: 0, wave: 'triangle', gain: 1.0, pan: -0.15 },
-    avenue: { semi: 7, wave: 'sine', gain: 0.9, pan: 0.18 },
-    club: { semi: 5, wave: 'triangle', gain: 0.95, pan: 0.22 },
-    canteen: { semi: -5, wave: 'sawtooth', gain: 0.5, pan: -0.2 },
-    plaza: { semi: 2, wave: 'sine', gain: 0.95, pan: 0 },
-    classroom: { semi: -7, wave: 'triangle', gain: 0.85, pan: -0.12 },
-    lecture: { semi: -12, wave: 'sine', gain: 1.1, pan: 0 },
-    dorm: { semi: 4, wave: 'triangle', gain: 0.95, pan: 0.14 },
-    library: { semi: -4, wave: 'sine', gain: 0.9, pan: 0.1 },
-    lake: { semi: 9, wave: 'sine', gain: 0.95, pan: -0.22 },
-    cafe: { semi: 3, wave: 'triangle', gain: 0.8, pan: 0.2 },
-    roof: { semi: 12, wave: 'sine', gain: 0.85, pan: -0.1 },
-    track: { semi: 7, wave: 'triangle', gain: 0.9, pan: 0.16 },
-    hall: { semi: -12, wave: 'sine', gain: 1.15, pan: 0 },
+    campus: { semi: 0, wave: 'triangle', gain: 1.0, pan: -0.15, motif: [0, 2, 4, 2], every: 8, voice: 'triangle' },
+    avenue: { semi: 7, wave: 'sine', gain: 0.9, pan: 0.18, motif: [0, 4, 7], every: 6, voice: 'sine' },
+    club: { semi: 5, wave: 'triangle', gain: 0.95, pan: 0.22, motif: [7, 4, 2, 4], every: 4, voice: 'triangle' },
+    canteen: { semi: -5, wave: 'sawtooth', gain: 0.5, pan: -0.2, motif: [0, 3, 5], every: 6, voice: 'square' },
+    plaza: { semi: 2, wave: 'sine', gain: 0.95, pan: 0, motif: [4, 2, 0], every: 8, voice: 'sine' },
+    classroom: { semi: -7, wave: 'triangle', gain: 0.85, pan: -0.12, motif: [0, 2, 3], every: 8, voice: 'triangle' },
+    lecture: { semi: -12, wave: 'sine', gain: 1.1, pan: 0, motif: [0, 7], every: 8, voice: 'sine' },
+    dorm: { semi: 4, wave: 'triangle', gain: 0.95, pan: 0.14, motif: [0, 2, 5, 4], every: 6, voice: 'triangle' },
+    library: { semi: -4, wave: 'sine', gain: 0.9, pan: 0.1, motif: [0, 3, 7, 5], every: 6, voice: 'sine' },
+    lake: { semi: 9, wave: 'sine', gain: 0.95, pan: -0.22, motif: [0, 4, 9, 7], every: 8, voice: 'sine' },
+    cafe: { semi: 3, wave: 'triangle', gain: 0.8, pan: 0.2, motif: [2, 4, 6], every: 6, voice: 'triangle' },
+    roof: { semi: 12, wave: 'sine', gain: 0.85, pan: -0.1, motif: [0, 5, 9], every: 8, voice: 'sine' },
+    track: { semi: 7, wave: 'triangle', gain: 0.9, pan: 0.16, motif: [0, 3, 5, 7], every: 4, voice: 'triangle' },
+    hall: { semi: -12, wave: 'sine', gain: 1.15, pan: 0, motif: [0, 5], every: 8, voice: 'sine' },
   };
+
+  /* ---------------------- 场景事件音：这个地方在发生什么 -------------------
+   * 环境底噪只说明「在哪」，这些零碎的声音才说明「这里正在干什么」：
+   * 图书馆翻书、食堂勺子碰碗、走廊脚步、放映机的嗡鸣、操场上的一声哨。
+   * 都是短促的合成音，按场景稀疏触发，不铺满。
+   * ------------------------------------------------------------------ */
+  const SCENE_SFX = {
+    campus: ['bell', 'pigeon'],
+    avenue: ['bike', 'leaf'],
+    club: ['paper', 'bell'],
+    canteen: ['cutlery', 'cutlery'],
+    plaza: ['pigeon', 'pigeon'],
+    classroom: ['chair', 'paper'],
+    lecture: ['projector', 'chair'],
+    dorm: ['step', 'door'],
+    library: ['page', 'page'],
+    lake: ['gull', 'water'],
+    cafe: ['cup', 'chair'],
+    roof: ['wind', 'door'],
+    track: ['whistle', 'ball'],
+    hall: ['chair', 'door'],
+  };
+
+  /** 短促事件音库：全部短、少、一次性 */
+  const SCENE_SFX_FN = {
+    page() {                                  // 翻书
+      const at = now() + 0.001, ctx = Audio.ctx;
+      for (let i = 0; i < 2; i++) {
+        const s = ctx.createBufferSource();
+        s.buffer = noiseBuffer(0.25);
+        const f = ctx.createBiquadFilter();
+        f.type = 'bandpass'; f.frequency.value = 2600 - i * 500; f.Q.value = 0.7;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, at + i * 0.09);
+        g.gain.exponentialRampToValueAtTime(0.035, at + i * 0.09 + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, at + i * 0.09 + 0.16);
+        s.connect(f).connect(g).connect(Audio.bus.amb);
+        s.start(at + i * 0.09); s.stop(at + i * 0.09 + 0.25);
+      }
+    },
+    cutlery() {                               // 勺子碰碗
+      const at = now() + 0.001;
+      for (let i = 0; i < 3; i++) {
+        tone(2100 + Math.random() * 1500, at + i * 0.06, 0.16, 0.014, 'triangle', 0.5, 0, (Math.random() - 0.5) * 0.5);
+      }
+    },
+    cup() { tone(880, now() + 0.001, 0.22, 0.016, 'sine', 0.4); tone(1320, now() + 0.03, 0.16, 0.009, 'sine', 0.5); },
+    chair() {                                 // 椅子挪一下
+      const at = now() + 0.001, ctx = Audio.ctx;
+      const s = ctx.createBufferSource();
+      s.buffer = noiseBuffer(0.3);
+      const f = ctx.createBiquadFilter();
+      f.type = 'lowpass'; f.frequency.setValueAtTime(900, at);
+      f.frequency.exponentialRampToValueAtTime(260, at + 0.22);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, at);
+      g.gain.exponentialRampToValueAtTime(0.03, at + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, at + 0.26);
+      s.connect(f).connect(g).connect(Audio.bus.amb);
+      s.start(at); s.stop(at + 0.3);
+    },
+    step() {                                  // 走廊上一声脚步
+      const at = now() + 0.001;
+      tone(120, at, 0.1, 0.02, 'sine', 0.3);
+      tone(190, at + 0.11, 0.09, 0.014, 'sine', 0.3);
+    },
+    door() {                                  // 门轴
+      const at = now() + 0.001;
+      tone(320, at, 0.5, 0.012, 'sawtooth', 0.5, 0, -0.2);
+      tone(318, at + 0.42, 0.4, 0.01, 'sawtooth', 0.5, 0, -0.2);
+    },
+    projector() {                             // 放映机转起来的那种嗡
+      const at = now() + 0.001;
+      tone(58, at, 2.6, 0.016, 'sawtooth', 0.4, 0, 0.1);
+      tone(116, at, 2.4, 0.008, 'sine', 0.4, 6, 0.1);
+      tone(174, at + 0.4, 0.2, 0.006, 'triangle', 0.6, 0, 0.1);
+    },
+    pigeon() {                                // 鸽群扑翅膀
+      const at = now() + 0.001;
+      for (let i = 0; i < 5; i++) tone(600 + Math.random() * 700, at + i * 0.07, 0.09, 0.009, 'triangle', 0.4, 0, (Math.random() - 0.5) * 0.6);
+    },
+    gull() {
+      const at = now() + 0.001;
+      for (let i = 0; i < 3; i++) tone(1500 - i * 180, at + i * 0.16, 0.2, 0.012, 'sine', 0.6, 0, 0.25);
+    },
+    water() {
+      const at = now() + 0.001, ctx = Audio.ctx;
+      const s = ctx.createBufferSource();
+      s.buffer = noiseBuffer(0.6);
+      const f = ctx.createBiquadFilter();
+      f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = 0.6;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, at);
+      g.gain.exponentialRampToValueAtTime(0.02, at + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, at + 0.5);
+      s.connect(f).connect(g).connect(Audio.bus.amb);
+      s.start(at); s.stop(at + 0.6);
+    },
+    wind() {
+      const at = now() + 0.001, ctx = Audio.ctx;
+      const s = ctx.createBufferSource();
+      s.buffer = noiseBuffer(2.2);
+      const f = ctx.createBiquadFilter();
+      f.type = 'lowpass'; f.frequency.setValueAtTime(300, at);
+      f.frequency.linearRampToValueAtTime(760, at + 1.1);
+      f.frequency.linearRampToValueAtTime(280, at + 2.1);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, at);
+      g.gain.linearRampToValueAtTime(0.028, at + 0.8);
+      g.gain.linearRampToValueAtTime(0.0001, at + 2.1);
+      s.connect(f).connect(g).connect(Audio.bus.amb);
+      s.start(at); s.stop(at + 2.2);
+    },
+    bell() {                                  // 校园广播的尾音
+      const at = now() + 0.001;
+      [0, 7, 12].forEach((s, i) => tone(523.25 * Math.pow(2, s / 12), at + i * 0.1, 1.2, 0.012, 'sine', 0.8, 0, 0.2));
+    },
+    bike() {
+      const at = now() + 0.001;
+      for (let i = 0; i < 2; i++) tone(2400, at + i * 0.12, 0.1, 0.012, 'triangle', 0.5, 0, 0.3);
+    },
+    leaf() { SCENE_SFX_FN.paper(); },
+    paper() {
+      const at = now() + 0.001, ctx = Audio.ctx;
+      const s = ctx.createBufferSource();
+      s.buffer = noiseBuffer(0.3);
+      const f = ctx.createBiquadFilter();
+      f.type = 'highpass'; f.frequency.value = 3200;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, at);
+      g.gain.exponentialRampToValueAtTime(0.016, at + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001, at + 0.26);
+      s.connect(f).connect(g).connect(Audio.bus.amb);
+      s.start(at); s.stop(at + 0.3);
+    },
+    whistle() {
+      const at = now() + 0.001;
+      tone(2100, at, 0.16, 0.016, 'sine', 0.4, 0, 0.3);
+      tone(2350, at + 0.2, 0.22, 0.014, 'sine', 0.4, 0, 0.3);
+    },
+    ball() {
+      const at = now() + 0.001;
+      tone(320, at, 0.18, 0.02, 'triangle', 0.5, 0, 0.2);
+      tone(240, at + 0.14, 0.22, 0.014, 'triangle', 0.5, 0, 0.2);
+    },
+  };
+
+  let sceneSfxNext = 0;
+  /** 稀疏触发当前场景的一个事件音 */
+  function tickSceneSfx() {
+    if (!Audio.enabled || !Audio.ctx) return;
+    const t = Audio.ctx.currentTime;
+    if (t < sceneSfxNext) return;
+    const pool = SCENE_SFX[Audio._scene];
+    const gap = Audio._weather === 'rain' ? 14 : 9;      // 下雨天外面少发生点事
+    sceneSfxNext = t + gap * (0.55 + Math.random() * 1.1);
+    if (!pool || !pool.length) return;
+    const name = pool[Math.floor(Math.random() * pool.length)];
+    const fn = SCENE_SFX_FN[name];
+    if (!fn) return;
+    try { fn(); } catch {}
+  }
 
   /* ------------------------------- 环境音配置 ------------------------------ */
   const AMB = {
@@ -264,6 +427,13 @@
       [0, 2, 4].forEach((s, i) =>
         tone(freq * Math.pow(2, s / 12) * 2, at + i * stepDur() * 0.5, 0.5, 0.01, 'sine', m.rev * 1.7, 0, sway));
     }
+    // 场景主题：这个地方自己的那几个音，隔几小节露一次头
+    if (st && st.motif && bar % st.every === st.every - 1 && idx === 0) {
+      st.motif.forEach((deg, i) => {
+        const f2 = m.root * Math.pow(2, (chord[deg % chord.length] + (deg >= chord.length ? 12 : 0) + st.semi) / 12);
+        tone(f2 * 2, at + i * stepDur() * 1.5, 0.9, 0.017, st.voice || 'sine', m.rev * 1.7, 0, st.pan * 1.4);
+      });
+    }
   }
 
   function runTick() {
@@ -276,6 +446,7 @@
       Audio._nextTime += stepDur();
       Audio._step++;
     }
+    tickSceneSfx();
   }
 
   /* ------------------------------ 环境音 --------------------------------- */

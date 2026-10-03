@@ -256,6 +256,12 @@
     setTimeout(() => el.remove(), 1100);
   }
 
+  /** 口袋键的角标：0 就藏起来 */
+  function setPocketBadge(btn, n) {
+    if (n > 0) btn.dataset.badge = String(n);
+    else delete btn.dataset.badge;
+  }
+
   function flightPocket() {
     const btn = $('#pocketBtn');
     if (!btn) return;
@@ -320,7 +326,8 @@
     $('#roamQuestCount').textContent = bits.length ? bits.join(' · ') : '这个月的事都办完了';
 
     const btn = $('#pocketBtn');
-    if (btn) btn.textContent = '▤ 口袋 ' + Game.ownedItems().length;
+    // 圆形图标键不塞文字了，数量走右上角的小角标（CSS 读 data-badge）
+    if (btn) setPocketBadge(btn, Game.ownedItems().length);
   }
 
   /* ================================= 漫游对话 ================================= */

@@ -403,7 +403,11 @@
       Engine.state.memories = Engine.state.memories || [];
       if (node.memory && opt.record !== false && !Engine.state.memories.includes(node.memory)) Engine.state.memories.push(node.memory);
       const pocket = $('#pocketBtn');
-      if (pocket) pocket.textContent = '▤ 口袋 ' + Engine.state.memories.length;
+      // 故事记忆也进口袋，角标一起涨
+      if (pocket) {
+        const n = (SP.game ? SP.game.ownedItems().length : 0);
+        if (n > 0) pocket.dataset.badge = String(n); else delete pocket.dataset.badge;
+      }
       if (node.voice && SP.storage.getSettings().voiceCue && !Engine.skip) {
         SP.audio.voice(node.person || null, { text });
       }

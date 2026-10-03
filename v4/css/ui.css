@@ -940,9 +940,11 @@ a:focus-visible,
   backdrop-filter: blur(9px);
   box-shadow: 0 14px 32px -14px rgba(0, 0, 0, 0.52), 0 1px 0 rgba(255, 255, 255, 0.12) inset;
 }
-/* 开着面板时，提示条挪到上方，别压住正在读的卡片 */
-body:has(.overlay:not(.hidden)) .toast-wrap { bottom: auto; top: 88px }
-body:has(.overlay:not(.hidden)) .toast { animation: toast-in-top 0.34s var(--ease-out) both }
+/* 开着面板时，提示条挪到上方，别压住正在读的卡片
+ * （判定用 openPanel/closePanel 打的 body.panel-open，不靠 overlay 的 class：
+ *  漫游期间 overlay 可能没带 hidden，用 :has() 会误判） */
+body.panel-open .toast-wrap { bottom: auto; top: 88px }
+body.panel-open .toast { animation: toast-in-top 0.34s var(--ease-out) both }
 @keyframes toast-in-top { from { opacity: 0; transform: translateY(-12px) } }
 .toast::before {
   content: "";
@@ -1049,3 +1051,124 @@ body:has(.overlay:not(.hidden)) .toast { animation: toast-in-top 0.34s var(--eas
 .panel.cover .btn.primary { padding: 13px 42px; font-size: 15px; letter-spacing: 0.16em }
 .panel.cover .fine { font-size: 11.5px; line-height: 2.05; letter-spacing: 0.03em }
 .panel.cover .stat b { font-family: var(--font-num); letter-spacing: 0.04em }
+
+/* ======================================================================== *
+ * 顶栏工具条：不再是一排一样的方块
+ *   第一组 圆形图标键（返回 / 记录 / 口袋 / 地图 / 任务）
+ *   第二组 拨动开关（自动 / 快进）——状态一眼看得出
+ *   第三组 声音开关 + 圆形图标键（存档 / 菜单）
+ * 组与组之间用胶囊底座分开，不再是一长条相同的药丸。
+ * ======================================================================== */
+
+.toolbar { gap: 8px; align-items: center }
+.tb-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ui-panel) 62%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ui-ink) 10%, transparent);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.42) inset;
+  backdrop-filter: blur(12px) saturate(1.08);
+}
+
+/* 圆形图标键 */
+.tb.ic {
+  width: 33px;
+  height: 33px;
+  padding: 0;
+  gap: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  line-height: 1;
+  border: 1px solid color-mix(in srgb, var(--ui-ink) 16%, transparent);
+  background: color-mix(in srgb, #fff 58%, var(--ui-panel));
+  color: var(--ui-ink-2);
+  box-shadow: 0 1px 2px rgba(20, 40, 44, 0.08);
+}
+.tb.ic:hover {
+  transform: translateY(-1px);
+  background: var(--ui-panel);
+  color: var(--ui-accent);
+  box-shadow: 0 6px 14px -8px color-mix(in srgb, var(--ui-accent) 70%, transparent);
+}
+.tb-group .tb .k { display: none }
+
+/* 拨动开关 */
+.tb.sw {
+  gap: 8px;
+  padding: 6px 13px 6px 9px;
+  font-size: 12.5px;
+  letter-spacing: 0.08em;
+  background: color-mix(in srgb, var(--ui-ink) 4%, transparent);
+  border-color: color-mix(in srgb, var(--ui-ink) 12%, transparent);
+}
+.tb.sw i {
+  position: relative;
+  width: 27px;
+  height: 16px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ui-ink) 22%, transparent);
+  box-shadow: 0 1px 2px rgba(20, 40, 44, 0.12) inset;
+  transition: background var(--t-fast) var(--ease);
+}
+.tb.sw i::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fffdf7;
+  box-shadow: 0 1px 3px rgba(20, 40, 44, 0.3);
+  transition: transform var(--t-fast) var(--ease);
+}
+.tb.sw:hover { background: color-mix(in srgb, var(--ui-ink) 8%, transparent) }
+.tb.sw[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--ui-accent) 15%, transparent);
+  border-color: color-mix(in srgb, var(--ui-accent) 45%, transparent);
+  color: var(--ui-accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ui-accent) 22%, transparent);
+}
+.tb.sw[aria-pressed="true"] i { background: var(--ui-accent) }
+.tb.sw[aria-pressed="true"] i::after { transform: translateX(11px) }
+
+/* 声音开着的时候，给它一点呼吸的暖色（不动开关语义，只加气氛） */
+#musicBtn[aria-pressed="true"] i { box-shadow: 0 0 10px color-mix(in srgb, var(--ui-accent) 55%, transparent) }
+
+/* 顶栏在窄屏时只留第一组与开关，其余交给菜单 */
+@media (max-width: 860px) {
+  .tb.sw { font-size: 0; gap: 0; padding: 6px 9px }
+}
+
+/* 圆形图标键右上角的数量角标（口袋里有几件） */
+.tb.ic[data-badge] { position: relative }
+.tb.ic[data-badge]::after {
+  content: attr(data-badge);
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--ui-accent);
+  color: #fff;
+  font-family: var(--font-num);
+  font-size: 9.5px;
+  line-height: 15px;
+  text-align: center;
+  box-shadow: 0 2px 6px -2px color-mix(in srgb, var(--ui-accent) 80%, transparent);
+}
+.tb.ic.bump { animation: tb-bump 0.6s var(--ease) }
+@keyframes tb-bump {
+  40% { transform: translateY(-3px) scale(1.06) }
+  100% { transform: none }
+}
+
+/* 漫游对话开着的时候，提示条让位（对话框在底部，提示条也在底部会压住台词） */
+body:has(#roamDialog:not(.hidden)) .toast-wrap { bottom: auto; top: 96px }

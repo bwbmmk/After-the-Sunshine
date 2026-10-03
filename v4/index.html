@@ -23,16 +23,22 @@
         <div class="chip place" id="placeChip">校门口</div>
       </div>
       <div class="toolbar" role="toolbar" aria-label="操作">
-        <button class="tb" id="backBtn" type="button" title="返回上一段（Backspace）">↶ 返回<span class="k">⌫</span></button>
-        <button class="tb" id="logBtn" type="button" title="故事记录（L）">☰ 记录<span class="k">L</span></button>
-        <button class="tb" id="pocketBtn" type="button" title="翻看故事中收起的纸片">▤ 口袋</button>
-        <button class="tb" id="mapBtn" type="button" title="校园地图（M）">◈ 地图<span class="k">M</span></button>
-        <button class="tb" id="questBtn" type="button" title="任务手账（J）">✦ 任务<span class="k">J</span></button>
-        <button class="tb" id="autoBtn" type="button" aria-pressed="false" title="自动播放（A）">▷ 自动<span class="k">A</span></button>
-        <button class="tb" id="skipBtn" type="button" aria-pressed="false" title="按住 Ctrl 可快进已读">» 快进<span class="k">Ctrl</span></button>
-        <button class="tb" id="musicBtn" type="button" aria-pressed="false" title="音乐、环境音与语气声（M）">♪ 声音</button>
-        <button class="tb" id="saveBtn" type="button" title="存档（S）">🖫 存档<span class="k">S</span></button>
-        <button class="tb" id="menuBtn" type="button" title="菜单（Esc）">≡ 菜单<span class="k">Esc</span></button>
+        <div class="tb-group">
+          <button class="tb ic" id="backBtn" type="button" aria-label="返回上一段" title="返回上一段（Backspace）">↶</button>
+          <button class="tb ic" id="logBtn" type="button" aria-label="故事记录" title="故事记录（L）">☰</button>
+          <button class="tb ic" id="pocketBtn" type="button" aria-label="口袋" title="翻看故事中收起的纸片">▤</button>
+          <button class="tb ic" id="mapBtn" type="button" aria-label="校园地图" title="校园地图（M）">◈</button>
+          <button class="tb ic" id="questBtn" type="button" aria-label="任务手账" title="任务手账（J）">✦</button>
+        </div>
+        <div class="tb-group">
+          <button class="tb sw" id="autoBtn" type="button" aria-pressed="false" aria-label="自动播放" title="自动播放（A）"><i></i>自动</button>
+          <button class="tb sw" id="skipBtn" type="button" aria-pressed="false" aria-label="快进" title="按住 Ctrl 可快进已读"><i></i>快进</button>
+        </div>
+        <div class="tb-group">
+          <button class="tb sw" id="musicBtn" type="button" aria-pressed="false" aria-label="声音" title="音乐、环境音与语气声（M）"><i></i>声音</button>
+          <button class="tb ic" id="saveBtn" type="button" aria-label="存档" title="存档（S）">🖫</button>
+          <button class="tb ic" id="menuBtn" type="button" aria-label="菜单" title="菜单（Esc）">≡</button>
+        </div>
       </div>
     </header>
 
@@ -53,9 +59,9 @@
           <em id="roamQuestCount">没有进行中的委托</em>
         </div>
         <div class="roam-actions">
-          <button class="roam-btn" id="roamMapBtn" type="button">◈ 地图</button>
-          <button class="roam-btn" id="roamJournalBtn" type="button">✦ 任务</button>
-          <button class="roam-btn primary" id="roamGoBtn" type="button">继续主线 →</button>
+          <button class="roam-btn ico" id="roamMapBtn" type="button" title="校园地图（M）"><span class="g">◈</span>地图</button>
+          <button class="roam-btn ico" id="roamJournalBtn" type="button" title="任务手账（J）"><span class="g">✦</span>任务</button>
+          <button class="roam-btn primary go" id="roamGoBtn" type="button">继续主线 →</button>
         </div>
       </div>
       <div class="roam-dialog hidden" id="roamDialog" aria-live="polite"></div>

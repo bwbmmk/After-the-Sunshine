@@ -69,7 +69,6 @@
       }
       SS.saveSettings({ soundOn: SP.audio.enabled });
       SP.ui.syncModes();
-      $('#musicBtn').innerHTML = SP.audio.enabled ? '♪ 声音开' : '♪ 声音关';
       SP.ui.toast(SP.audio.enabled ? '音乐与音效已开启' : '已静音');
     });
 
@@ -204,7 +203,6 @@
       const s = SS.getSettings();
       if (s.soundOn && !SP.audio.enabled) {
         SP.audio.enable(true);
-        $('#musicBtn').innerHTML = '♪ 声音开';
         SP.ui.syncModes();
       }
       window.removeEventListener('pointerdown', unlock);
@@ -213,7 +211,6 @@
     window.addEventListener('pointerdown', unlock);
     window.addEventListener('keydown', unlock);
     // 恢复按钮文案
-    if (SS.getSettings().soundOn) $('#musicBtn').innerHTML = '♪ 声音';
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

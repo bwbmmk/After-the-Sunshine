@@ -791,9 +791,9 @@
 .npc-spot.gift .npc-face { box-shadow: 0 0 0 2px #d3a44c, 0 0 20px rgba(211, 164, 76, 0.5) }
 .npc-name { backdrop-filter: blur(6px) }
 
-/* 漫游对话：纸面 + 左侧一道强调 */
+/* 漫游对话：纸面 + 左侧一道强调（注意：定位必须仍是 absolute，
+ * 改成 relative 会让它掉回 roamLayer 的常规流里、跑到画面顶部） */
 .roam-dialog {
-  position: relative;
   background: linear-gradient(180deg, color-mix(in srgb, #fff 20%, var(--ui-panel)), var(--ui-panel) 26%);
   border-color: color-mix(in srgb, #fff 45%, transparent);
   box-shadow: 0 24px 60px -26px rgba(12, 30, 34, 0.5), 0 1px 0 rgba(255, 255, 255, 0.4) inset;
@@ -894,3 +894,68 @@
 }
 .j-face .dots { letter-spacing: 1.6px }
 .j-face.full b { text-shadow: 0 0 12px color-mix(in srgb, #cf7f57 45%, transparent) }
+
+/* ======================================================================== *
+ * 漫游 HUD 里的按钮也各有一个样子
+ *   .ico  图标键：圆形图标 + 文字（地图 / 任务）
+ *   .go   主行动：更宽、带箭头，唯一的实心按钮
+ * 顶栏圆形键上的数量角标（口袋）
+ * ======================================================================== */
+
+.roam-btn.ico {
+  gap: 7px;
+  padding: 6px 14px 6px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ui-panel) 82%, transparent);
+}
+.roam-btn.ico .g {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 11px;
+  background: color-mix(in srgb, var(--ui-accent) 16%, transparent);
+  color: var(--ui-accent);
+}
+.roam-btn.ico:hover .g { background: var(--ui-accent); color: #fff }
+.roam-btn.go {
+  padding: 9px 20px;
+  font-size: 13.5px;
+  letter-spacing: 0.08em;
+  border-radius: 999px;
+  box-shadow: 0 12px 26px -14px color-mix(in srgb, var(--ui-accent) 90%, transparent);
+}
+.roam-btn.go:disabled {
+  background: color-mix(in srgb, var(--ui-ink) 6%, transparent);
+  color: var(--ui-ink-3);
+  box-shadow: none;
+}
+
+/* 「看看这里」做成一枚圆玻璃钮，和别的按钮不撞脸 */
+.look-spot {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ui-ink) 20%, transparent);
+  background: color-mix(in srgb, #fff 42%, var(--ui-panel));
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 24px -14px rgba(20, 40, 44, 0.5), 0 1px 0 rgba(255, 255, 255, 0.5) inset;
+  color: var(--ui-ink);
+  font-weight: 600;
+}
+.look-spot::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 32%, #fff, color-mix(in srgb, var(--c-lamp) 78%, #fff));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--c-lamp) 70%, transparent);
+  animation: look-breathe 3.4s var(--ease) infinite alternate;
+}
+@keyframes look-breathe {
+  from { transform: scale(0.9); opacity: 0.75 }
+  to { transform: scale(1.08); opacity: 1 }
+}
+.look-spot:hover { background: var(--ui-panel) }
