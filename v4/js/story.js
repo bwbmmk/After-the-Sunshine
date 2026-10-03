@@ -56,7 +56,7 @@ function toSegs(t,who){
 }
 const flatOf=(segs)=>segs.map((x)=>x.s).join('');
 
-function chapter(i){chapterIndex=i;context={chapter:CHAPTERS[i].name,scene:CHAPTERS[i].scene,place:'',time:CHAPTERS[i].time,weather:CHAPTERS[i].weather,mood:i===2?'melancholy':'warm'};}
+function chapter(i){chapterIndex=i;context={chapter:CHAPTERS[i].name,scene:CHAPTERS[i].scene,place:'',time:CHAPTERS[i].time,weather:CHAPTERS[i].weather,mood:['warm','calm','melancholy','night','tender'][i]};}
 function at(scene,place,time='afternoon',weather='fair'){Object.assign(context,{scene,place,time,weather});}
 function beat(id,who,text,next,extra={}){
   const isFn=typeof text==='function';

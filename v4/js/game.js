@@ -57,10 +57,10 @@
       hint: '跟着晾衣被走——四号楼 417', unlocks: ['campus', 'avenue', 'dorm', 'canteen'] },
     w2: { gate: 'c1end',      next: 'c2open',  target: 'club',      title: '十月 · 自由活动',
       theme: '招新的热闹还散在广场上，谁也不急着走。',
-      hint: '十月的社团招新在活动中心门口', unlocks: ['club', 'library', 'plaza'] },
+      hint: '十月的社团招新在活动中心门口', unlocks: ['club', 'library', 'plaza', 'classroom'] },
     w3: { gate: 'c2end',      next: 'c3open',  target: 'dorm',      title: '十一月 · 自由活动',
       theme: '十一月，很多事堆在了一起，一件压着一件。',
-      hint: '十一月的第一晚，回寝室看粗剪', unlocks: ['classroom', 'cafe', 'lake'] },
+      hint: '十一月的第一晚，回寝室看粗剪', unlocks: ['cafe', 'lake'] },
     w4: { gate: 'c3end',      next: 'c4open',  target: 'classroom', title: '十二月 · 自由活动',
       theme: '雪落得很小，事情却都到了最后几天。',
       hint: '去教学楼参加展映说明会', unlocks: ['lecture', 'roof', 'track'] },
@@ -420,6 +420,11 @@
   }
 
   function questsOfferable(npcId, wid) {
+    const w = ensure();
+    // 同一个人手上还压着没办完的事，就不会再开口拜托下一件
+    const busy = Object.keys(w.quests).some((qid) =>
+      QUESTS[qid].giver === npcId && !w.quests[qid].done);
+    if (busy) return [];
     return Object.keys(QUESTS).filter((qid) =>
       QUESTS[qid].window === wid && QUESTS[qid].giver === npcId && questState(qid) === 'offer');
   }

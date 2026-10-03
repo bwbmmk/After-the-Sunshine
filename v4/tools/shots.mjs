@@ -59,6 +59,7 @@ const SHOTS = [
   { name: '17_校园地图', kind: 'panel', panel: 'map', window: 'w2', loc: 'club', desc: '14 处地点的手绘校园导览，含当前位置与委托标记' },
   { name: '18_任务手账', kind: 'panel', panel: 'journal', window: 'w2', loc: 'club', desc: '委托进度、这个月没做的、六位人物的熟络度' },
   { name: '19_口袋', kind: 'panel', panel: 'notebook', window: 'w2', loc: 'club', desc: '口袋分三栏：手上的事 / 留念 / 角落里的小东西' },
+  { name: '20_留念物时刻', kind: 'keepsake', npc: 'yan', window: 'w2', loc: 'library', desc: '满 5 心后的专属对话，头像换成只属于你们的 CG' },
 ];
 
 /* ── 驱动脚本（注入到产物副本尾部） ───────────────────────────────── */
@@ -159,6 +160,25 @@ function driver(s) {
             npcs: document.querySelectorAll('#npcLayer .npc-spot').length,
             dialog: !document.getElementById('roamDialog').classList.contains('hidden'),
             hud: (document.getElementById('roamObjText').textContent || '').slice(0, 30),
+          });
+          return;
+        } else if (s.kind === 'keepsake') {
+          // 满 5 心：点开对话，第一段就是留念物时刻（对话框头像是 CG）
+          SP.engine.init(null);
+          var wk = SP.game.ensure();
+          wk.rapport[s.npc] = 5;
+          var wink = SP.game.WINDOWS[s.window];
+          SP.engine.state.id = wink.gate;
+          SP.roam.enter(wink.next);
+          if (s.loc) SP.roam.travel(s.loc);
+          var kspot = document.querySelector('#npcLayer .npc-spot[data-npc="' + s.npc + '"]');
+          if (kspot) kspot.click();
+          // 第一段是打招呼，往前一格才进入留念物时刻（头像换成 CG）
+          var knext = document.getElementById('rdNext');
+          if (knext) knext.click();
+          ready('ok', {
+            dialog: !document.getElementById('roamDialog').classList.contains('hidden'),
+            cg: !!document.querySelector('#roamDialog .rd-face.cg img'),
           });
           return;
         } else if (s.kind === 'panel') {

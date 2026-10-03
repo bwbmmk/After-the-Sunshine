@@ -353,8 +353,8 @@ check('成就数 = 17（剧情 8 + 漫游 9）', rep.achCount === 17, `${rep.ach
 check('章节数 = 5', rep.chapters === 5, String(rep.chapters));
 check('主线已无「当场选项」节点', rep.nodesWithChoices === 0, `${rep.nodesWithChoices} 个`);
 check('分岔节点 = 14（读世界 flag）', rep.branchNodes === 14, `${rep.branchNodes} 个 · 摊开后出边 ${rep.branchEdges} 条`);
-check('委托 28 / 互斥组 10 / 物品 30 / 留念 6',
-  rep.questCount === 28 && rep.groupCount === 10 && rep.itemCount === 30 && rep.keepCount === 6,
+check('委托 29 / 互斥组 10 / 物品 31 / 留念 6',
+  rep.questCount === 29 && rep.groupCount === 10 && rep.itemCount === 31 && rep.keepCount === 6,
   `委托 ${rep.questCount} · 组 ${rep.groupCount} · 物品 ${rep.itemCount} · 留念 ${rep.keepCount}`);
 check('舞台四层视差已构建', rep.layerCount >= 4, `${rep.layerCount} 层`);
 check('四层均为合法 <svg> 注入', (rep.layerHasSvgRoot || []).every(Boolean) && rep.layerHasSvgRoot.length >= 4,

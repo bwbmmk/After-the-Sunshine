@@ -288,9 +288,12 @@
   function announceRapport(npcId) {
     const name = (Game.NPCS[npcId] || {}).name || '';
     if (!name) return;
-    const r = Game.ensure().rapport[npcId] || 0;
+    const w = Game.ensure();
+    const r = w.rapport[npcId] || 0;
     const dots = '●'.repeat(r) + '○'.repeat(Math.max(0, Game.RAPPORT_MAX - r));
-    const tail = r >= Game.RAPPORT_MAX ? '　——　他/她好像还有东西要给你' : '';
+    // 留念物已经拿过的，不再提示「还有东西要给你」
+    const tail = (r >= Game.RAPPORT_MAX && !w.keepsakes.includes(npcId))
+      ? '　——　他/她好像还有东西要给你' : '';
     SP.ui.toast('和' + name + '更熟了一点　' + dots + tail, 3200);
   }
 
@@ -310,10 +313,10 @@
     go.textContent = here ? '继续主线 →' : '去' + Game.LOCS[win.target].name + '继续主线';
 
     const bits = [];
-    if (activeQ.length) bits.push('委托 ' + activeQ.length + ' 件在手上');
-    if (readyQ.length) bits.push(readyQ.length + ' 件可以交差');
+    if (activeQ.length) bits.push('手上 ' + activeQ.length + ' 件');
+    if (readyQ.length) bits.push(readyQ.length + ' 件可交差');
     const left = undecidedGroups(Roam.windowId).length;
-    if (left) bits.push('还有 ' + left + ' 件事要定（找地图上亮名字的人聊）');
+    if (left) bits.push(left + ' 件要定（找亮名字的人）');
     $('#roamQuestCount').textContent = bits.length ? bits.join(' · ') : '这个月的事都办完了';
 
     const btn = $('#pocketBtn');
@@ -340,7 +343,10 @@
       const step = Game.currentStep(qid);
       q.push({ kind: 'step', qid, lines: Game.stepLines(qid, w.quests[qid].stage), step });
     }
-    for (const qid of Game.questsOfferable(npcId, wid)) {
+    // 一次对话最多抛出一件新委托——一件说清楚了，再谈下一件
+    const offers = Game.questsOfferable(npcId, wid);
+    if (offers.length) {
+      const qid = offers[0];
       const QD = Game.QUESTS[qid];
       q.push({
         kind: 'offer', qid, lines: Game.QUEST_LINES[qid].offer,
@@ -414,10 +420,30 @@
     el.classList.remove('pop');
     void el.offsetWidth;
     el.classList.add('pop');
+    paintDialogFace();
     const next = $('#rdNext');
     if (next) {
       next.style.display = '';
       next.textContent = seg && c.li < seg.lines.length - 1 ? '继续 ▾' : (c.seg < c.queue.length - 1 ? '继续 ▾' : '合上 ✓');
+    }
+  }
+
+  /** 留念物时刻：把 SVG 小头像换成那张只属于你们的 CG */
+  function paintDialogFace() {
+    const c = Roam.convo;
+    if (!c) return;
+    const face = document.querySelector('#roamDialog .rd-face');
+    if (!face) return;
+    const seg = c.queue[c.seg];
+    const cg = seg && seg.kind === 'keepsake' && SP.cg && SP.cg[c.npc];
+    if (cg && !face.classList.contains('cg')) {
+      face.classList.add('cg');
+      clear(face);
+      face.append(h('img', { src: cg, alt: (Game.NPCS[c.npc] || {}).name || '' }));
+    } else if (!cg && face.classList.contains('cg')) {
+      face.classList.remove('cg');
+      clear(face);
+      face.append(h('span', { html: SP.character.build(c.npc, 'calm') }));
     }
   }
 
@@ -478,7 +504,7 @@
     } else if (seg.kind === 'keepsake') {
       const r = Game.takeKeepsake(seg.npc);
       if (r) {
-        SP.audio.sfx('unlock');
+        SP.audio.sfx('keepsake');
         SP.ui.toast('收进口袋：《' + r.def.name + '》', 4200);
         setTimeout(() => SP.ui.toast('这件东西只给了你一个人', 3200), 900);
         flyItem(r.item, 'in');
@@ -800,16 +826,15 @@
         ...Object.keys(Game.NPCS).map((npcId) => {
           const r = w.rapport[npcId] || 0;
           const full = r >= Game.RAPPORT_MAX;
+          const hasCg = w.keepsakes.includes(npcId) && SP.cg && SP.cg[npcId];
           return h('div.j-face', { class: full ? 'full' : null },
-            h('span.face', { html: SP.character.build(npcId, 'calm') }),
+            hasCg
+              ? h('span.face.cg', {}, h('img', { src: SP.cg[npcId], alt: Game.NPCS[npcId].name }))
+              : h('span.face', { html: SP.character.build(npcId, 'calm') }),
             h('b', { text: Game.NPCS[npcId].name }),
             h('span.dots', { text: '●'.repeat(r) + '○'.repeat(Game.RAPPORT_MAX - r) }),
             full ? h('span.j-full', { text: w.keepsakes.includes(npcId) ? '留念已收' : '有东西要给你' }) : null);
         })));
-
-    const pocket = h('div.j-pocket', {},
-      h('h2', { text: '口袋 · ' + Game.ownedItems().length }),
-      pocketRows());
 
     SP.ui.openPanel(h('div', {},
       SP.ui.head('任务手账', '漫游 · 委托与手记'),
@@ -837,19 +862,8 @@
             h('span', { text: '✓ ' + Game.QUESTS[qid].title }),
             h('em', { text: Game.NOTES[qid].date }))))
           : h('p.j-sub', { text: '从一件小事开始，也挺好。' })),
-      pocket,
       people), { wide: true, mode: 'journal' });
     SP.audio.sfx('click');
-  }
-
-  /** 手账里的口袋速览（完整版在顶栏「口袋」里） */
-  function pocketRows() {
-    const secs = Game.pocketSections();
-    if (!secs.length) return h('p.j-sub', { text: '还是空的。别人递给你的东西，会先落到这儿。' });
-    return h('div.j-pockets', {}, ...secs.map((s) =>
-      h('div.j-pocket-row', {},
-        h('b', { text: s.title + ' ' + s.items.length }),
-        h('span', { text: s.items.map((it) => it.icon + it.name).join('　') }))));
   }
 
   /* ================================== 导出 ================================== */

@@ -17,32 +17,32 @@
     warm: {
       root: 261.63, bpm: 74, wave: 'sine', lvl: 0.9, rev: 0.34,
       chords: [[0, 4, 7], [-3, 2, 5], [2, 5, 9], [-5, 0, 4]],
-      arp: [0, 1, 2, 1, 0, 2, 1, 2], sparkle: 0.7, bass: 0.9,
+      arp: [0, 1, 2, 1, 0, 2, 1, 2], arpB: [1, 2, 0, 2, 1, 0, 2, 1], sparkle: 0.7, bass: 0.9,
     },
     calm: {
       root: 246.94, bpm: 68, wave: 'sine', lvl: 0.8, rev: 0.38,
       chords: [[0, 3, 7], [-2, 3, 5], [-4, 0, 3], [-5, -2, 2]],
-      arp: [0, 2, 1, 2, 0, 1, 2, 1], sparkle: 0.4, bass: 0.8,
+      arp: [0, 2, 1, 2, 0, 1, 2, 1], arpB: [2, 1, 2, 0, 1, 2, 0, 2], sparkle: 0.4, bass: 0.8,
     },
     melancholy: {
       root: 220.0, bpm: 62, wave: 'triangle', lvl: 0.85, rev: 0.44,
       chords: [[0, 3, 7], [-4, 0, 3], [-5, -1, 2], [-2, 2, 5]],
-      arp: [0, 1, 2, 1, 2, 1, 0, 1], sparkle: 0.25, bass: 1.0,
+      arp: [0, 1, 2, 1, 2, 1, 0, 1], arpB: [1, 0, 2, 1, 0, 2, 1, 0], sparkle: 0.25, bass: 1.0,
     },
     night: {
       root: 196.0, bpm: 58, wave: 'sine', lvl: 0.75, rev: 0.5,
       chords: [[0, 3, 7], [-2, 1, 5], [-4, 3, 7], [-5, 0, 3]],
-      arp: [0, 2, 1, 2, 1, 0, 2, 1], sparkle: 0.6, bass: 0.85,
+      arp: [0, 2, 1, 2, 1, 0, 2, 1], arpB: [2, 1, 0, 1, 2, 1, 0, 2], sparkle: 0.6, bass: 0.85,
     },
     tender: {
       root: 233.08, bpm: 66, wave: 'sine', lvl: 0.85, rev: 0.42,
       chords: [[0, 4, 7], [-3, 4, 9], [-5, 2, 7], [-2, 2, 5]],
-      arp: [0, 1, 2, 2, 1, 0, 1, 2], sparkle: 0.8, bass: 0.85,
+      arp: [0, 1, 2, 2, 1, 0, 1, 2], arpB: [2, 2, 1, 0, 2, 1, 1, 0], sparkle: 0.8, bass: 0.85,
     },
     hope: {
       root: 293.66, bpm: 84, wave: 'sine', lvl: 0.95, rev: 0.36,
       chords: [[0, 4, 7], [2, 5, 9], [-3, 2, 7], [-1, 4, 7]],
-      arp: [0, 1, 2, 1, 2, 0, 1, 2], sparkle: 1.0, bass: 0.95,
+      arp: [0, 1, 2, 1, 2, 0, 1, 2], arpB: [1, 2, 1, 2, 0, 2, 1, 0], sparkle: 1.0, bass: 0.95,
     },
   };
 
@@ -186,7 +186,9 @@
     const bar = Math.floor(step / 8);
     const chord = m.chords[bar % m.chords.length];
     const idx = step % 8;
-    const degree = m.arp[idx];
+    // 两套琶音按小节交替，同一个情绪也不会一直循环同一条旋律
+    const arp = (bar % 2 && m.arpB) ? m.arpB : m.arp;
+    const degree = arp[idx];
     const semi = chord[degree % chord.length] + (degree >= chord.length ? 12 : 0);
     const freq = m.root * Math.pow(2, semi / 12);
     const lvl = m.lvl * (0.075 + (idx % 2 ? 0.012 : 0));
@@ -358,6 +360,13 @@
     unlock() {
       const at = now() + 0.001;
       [0, 4, 7, 12, 16].forEach((s, i) => tone(392 * Math.pow(2, s / 12), at + i * 0.09, 0.9, 0.045, 'sine', 0.7));
+    },
+    // 留念物：一段只响一次的五声音阶小句子，比 unlock 更慢、更软
+    keepsake() {
+      const at = now() + 0.001;
+      [0, 4, 7, 12, 7, 4].forEach((s, i) =>
+        tone(329.63 * Math.pow(2, s / 12), at + i * 0.17, 1.1, 0.04, 'sine', 0.85));
+      tone(164.81, at, 2.8, 0.035, 'triangle', 0.7);
     },
     ending() {
       const at = now() + 0.001;

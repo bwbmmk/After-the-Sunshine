@@ -199,7 +199,7 @@ const probe = `<script id="__probeRoam">
       o.journalDoneRows = document.querySelectorAll('#panel .j-done:not(.off) li').length;
       o.journalAbandoned = document.querySelectorAll('#panel .j-done.off li').length;
       o.journalFaces = document.querySelectorAll('#panel .j-face').length;
-      o.journalPocketRows = document.querySelectorAll('#panel .j-pocket-row').length;
+      o.journalCgFaces = document.querySelectorAll('#panel .j-face .face.cg img').length;
       o.journalText = txt(document.getElementById('panel')).replace(/\\s+/g, ' ').slice(0, 60);
       SP.ui.closePanel();
 
@@ -351,7 +351,7 @@ check('手账记下已完成与这个月没做的',
   (rep.journalDoneRows || 0) >= 2 && (rep.journalAbandoned || 0) >= 1,
   `完成 ${rep.journalDoneRows} · 作废 ${rep.journalAbandoned} · 在场卡片 ${rep.journalQuestCards}`);
 check('手账列出六个人的熟悉度', (rep.journalFaces || 0) === 6, `${rep.journalFaces} 人`);
-check('手账带口袋速览', (rep.journalPocketRows || 0) >= 1, `${rep.journalPocketRows} 行`);
+check('手账里拿过留念物的人显示 CG', (rep.journalCgFaces || 0) >= 1, `${rep.journalCgFaces} 张`);
 check('口袋分三层（任务 / 留念 / 彩蛋）', (rep.pocketSections || []).length === 3,
   JSON.stringify(rep.pocketSections || []));
 check('口袋面板把每件东西都画出来', (rep.pocketCards || 0) >= 4, `${rep.pocketCards} 件`);
@@ -365,7 +365,7 @@ check('手记并进口袋的「纸片」区', (rep.notebookExtras || 0) === 2, S
 check('不在目标地点时不能继续主线', rep.goDisabledElsewhere === true, String(rep.goDisabledElsewhere));
 check('到达目标后可继续主线', rep.goEnabledAtTarget === true, String(rep.goEnabledAtTarget));
 check('还有事没定时先弹确认面板',
-  rep.confirmShown === true && /没有定下来/.test(rep.confirmText || ''), rep.confirmText);
+  rep.confirmShown === true && /尚未交差/.test(rep.confirmText || ''), rep.confirmText);
 check('继续主线回到剧情节点 room0',
   rep.storyResumedId === 'room0' && rep.roamClosedAfterGo && rep.dialogueBack,
   `${rep.storyResumedId} · 对话框 ${rep.dialogueBack}`);

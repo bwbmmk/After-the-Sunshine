@@ -98,6 +98,8 @@ await run('CSS 压缩等价性', NODE, ['tools/check-css.mjs']);
 await run('运行时冒烟测试', NODE, ['tools/probe.mjs']);
 /* 8. 漫游玩法端到端 */
 await run('漫游玩法探针', NODE, ['tools/probe-roam.mjs']);
+/* 9. jsdom 回归（存档不可变 / 漫游恢复 / 委托节奏 / 五闸门全通） */
+await run('交互回归（jsdom）', NODE, ['tools/test-regressions.cjs']);
 
 /* 可选：截图 + 截图体检 */
 if (WITH_SHOTS) {
